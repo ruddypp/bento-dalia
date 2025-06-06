@@ -386,9 +386,9 @@ if (isset($_GET['action']) && $_GET['action'] === 'check_related_supplier' && is
                 </div>
             </div>
             <?php if (!isset($VIEW_ONLY) || $VIEW_ONLY !== true): ?>
-            <button type="button" class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-4 py-2 rounded-md transition-all" onclick="showModal('addSupplierModal')">
-                <i class="fas fa-plus-circle mr-2"></i> Tambah Supplier
-            </button>
+        <button type="button" class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-4 py-2 rounded-md transition-all" onclick="showModal('addSupplierModal')">
+            <i class="fas fa-plus-circle mr-2"></i> Tambah Supplier
+        </button>
             <?php endif; ?>
         </div>
     </div>
@@ -434,11 +434,11 @@ if (isset($_GET['action']) && $_GET['action'] === 'check_related_supplier' && is
                         <?php if (!isset($VIEW_ONLY) || $VIEW_ONLY !== true): ?>
                         <div class="flex space-x-2">
                             <button class="text-blue-500 hover:text-blue-700 edit-supplier-btn" data-id="<?= $supplier['id_supplier'] ?>">
-                                <i class="fas fa-edit"></i>
-                            </button>
+                            <i class="fas fa-edit"></i>
+                        </button>
                             <button class="text-red-500 hover:text-red-700" onclick="deleteSupplier(<?= $supplier['id_supplier'] ?>, '<?= addslashes($supplier['nama_supplier']) ?>')">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                            <i class="fas fa-trash"></i>
+                        </button>
                         </div>
                         <?php else: ?>
                         <div class="text-gray-400">

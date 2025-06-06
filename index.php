@@ -33,6 +33,19 @@ $query = "SELECT COUNT(*) as total FROM barang WHERE stok <= stok_minimum";
 $result = mysqli_query($conn, $query);
 $lowStockItems = mysqli_fetch_assoc($result)['total'];
 
+// Laporan penjualan bulanan
+$query = "SELECT 
+            DATE_FORMAT(tanggal, '%Y-%m') AS bulan,
+            SUM(total_penjualan) AS total_penjualan,
+            SUM(total_keuntungan) AS total_keuntungan,
+            SUM(jumlah_transaksi) AS jumlah_transaksi
+          FROM laporan_penjualan 
+          WHERE MONTH(tanggal) = MONTH(CURRENT_DATE()) 
+          AND YEAR(tanggal) = YEAR(CURRENT_DATE())
+          GROUP BY DATE_FORMAT(tanggal, '%Y-%m')";
+$result = mysqli_query($conn, $query);
+$monthlySales = mysqli_fetch_assoc($result);
+
 // Barang dengan stok teratas
 $query = "SELECT * FROM barang ORDER BY stok DESC LIMIT 5";
 $topStockItems = mysqli_query($conn, $query);
@@ -48,20 +61,25 @@ $query = "SELECT l.*, u.nama_lengkap
           ORDER BY l.waktu DESC LIMIT 5";
 $recentActivities = mysqli_query($conn, $query);
 
-// Penerimaan terbaru
-$query = "SELECT p.*, s.nama_supplier, u.nama_lengkap 
-          FROM penerimaan p 
-          JOIN supplier s ON p.id_supplier = s.id_supplier 
-          JOIN users u ON p.id_user = u.id_user 
-          ORDER BY p.tanggal_terima DESC LIMIT 5";
-$recentReceipts = mysqli_query($conn, $query);
+// Laporan Masuk Terbaru (menggantikan Penerimaan Terbaru)
+$query = "SELECT lm.id_laporan_masuk, lm.tanggal_laporan, lm.status, lm.created_at, 
+          u.nama_lengkap, COUNT(lmd.id_masuk) as total_items
+          FROM laporan_masuk lm 
+          LEFT JOIN laporan_masuk_detail lmd ON lm.id_laporan_masuk = lmd.id_laporan
+          LEFT JOIN users u ON lm.created_by = u.id_user 
+          GROUP BY lm.id_laporan_masuk
+          ORDER BY lm.created_at DESC LIMIT 5";
+$recentLaporanMasuk = mysqli_query($conn, $query);
 
-// Pengeluaran terbaru
-$query = "SELECT p.*, u.nama_lengkap 
-          FROM pengeluaran p 
-          JOIN users u ON p.id_user = u.id_user 
-          ORDER BY p.tanggal_keluar DESC LIMIT 5";
-$recentOutgoings = mysqli_query($conn, $query);
+// Laporan Penjualan Hari Ini (menggantikan Pengeluaran Terbaru)
+$today = date('Y-m-d');
+$query = "SELECT p.*, COUNT(pd.id_penjualan_detail) as total_items 
+          FROM penjualan p 
+          LEFT JOIN penjualan_detail pd ON p.id_penjualan = pd.id_penjualan 
+          WHERE DATE(p.tanggal_penjualan) = '$today' 
+          GROUP BY p.id_penjualan 
+          ORDER BY p.tanggal_penjualan DESC LIMIT 5";
+$todaySales = mysqli_query($conn, $query);
 ?>
 
 <!-- Dashboard Content -->
@@ -117,6 +135,41 @@ $recentOutgoings = mysqli_query($conn, $query);
             </div>
         </div>
     </div>
+</div>
+
+<!-- Laporan Penjualan Bulanan -->
+<div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100 mb-6">
+    <h3 class="text-base font-medium text-gray-800 mb-4 flex items-center">
+        <i class="fas fa-chart-line text-blue-500 mr-2"></i> Laporan Penjualan Bulan Ini
+    </h3>
+    
+    <?php if($monthlySales): ?>
+    <div class="grid md:grid-cols-3 gap-5">
+        <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+            <div class="text-sm text-blue-600 mb-1">Total Penjualan</div>
+            <div class="text-xl font-bold"><?= 'Rp ' . number_format($monthlySales['total_penjualan'], 0, ',', '.') ?></div>
+        </div>
+        
+        <div class="bg-green-50 p-4 rounded-lg border border-green-100">
+            <div class="text-sm text-green-600 mb-1">Total Keuntungan</div>
+            <div class="text-xl font-bold"><?= 'Rp ' . number_format($monthlySales['total_keuntungan'], 0, ',', '.') ?></div>
+        </div>
+        
+        <div class="bg-purple-50 p-4 rounded-lg border border-purple-100">
+            <div class="text-sm text-purple-600 mb-1">Jumlah Transaksi</div>
+            <div class="text-xl font-bold"><?= $monthlySales['jumlah_transaksi'] ?></div>
+        </div>
+    </div>
+    <div class="mt-3 text-right">
+        <a href="laporan_penjualan.php?filter_type=monthly" class="text-blue-600 hover:text-blue-800 text-sm">
+            Lihat laporan lengkap <i class="fas fa-arrow-right ml-1"></i>
+        </a>
+    </div>
+    <?php else: ?>
+    <div class="text-center py-4 text-gray-500">
+        <i class="fas fa-info-circle mr-1"></i> Belum ada data penjualan bulan ini
+    </div>
+    <?php endif; ?>
 </div>
 
 <div class="grid lg:grid-cols-2 gap-5 mb-6">
@@ -199,45 +252,81 @@ $recentOutgoings = mysqli_query($conn, $query);
         </div>
     </div>
     
-    <!-- Penerimaan Terbaru -->
+    <!-- Laporan Masuk Terbaru -->
     <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
         <h3 class="text-base font-medium text-gray-800 mb-4 flex items-center">
-            <i class="fas fa-dolly text-green-500 mr-2"></i> Penerimaan Terbaru
+            <i class="fas fa-dolly text-green-500 mr-2"></i> Laporan Masuk Terbaru
         </h3>
         <div class="space-y-3">
-            <?php while ($receipt = mysqli_fetch_assoc($recentReceipts)): ?>
-            <div class="flex items-start border-b border-gray-100 pb-3">
-                <div class="rounded-full bg-green-50 p-2 mr-3 flex-shrink-0">
-                    <i class="fas fa-truck-loading text-green-500 text-xs"></i>
+            <?php if(mysqli_num_rows($recentLaporanMasuk) > 0): ?>
+                <?php while ($laporan = mysqli_fetch_assoc($recentLaporanMasuk)): ?>
+                <div class="flex items-start border-b border-gray-100 pb-3">
+                    <div class="rounded-full bg-green-50 p-2 mr-3 flex-shrink-0">
+                        <i class="fas fa-truck-loading text-green-500 text-xs"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-800">Laporan #<?= $laporan['id_laporan_masuk'] ?></p>
+                        <p class="text-xs text-gray-600 mt-0.5">
+                            <?= $laporan['total_items'] ?> item | 
+                            Status: <span class="<?= $laporan['status'] == 'approved' ? 'text-green-600' : 'text-yellow-600' ?>">
+                                <?= ucfirst($laporan['status']) ?>
+                            </span>
+                        </p>
+                        <p class="text-xs text-gray-400 mt-1">
+                            <?= date('d/m/Y', strtotime($laporan['tanggal_laporan'])) ?> | 
+                            Oleh: <?= $laporan['nama_lengkap'] ?>
+                        </p>
+                    </div>
                 </div>
-                <div>
-                    <p class="text-sm font-medium text-gray-800">Dari: <?= $receipt['nama_supplier'] ?></p>
-                    <p class="text-xs text-gray-600 mt-0.5">Oleh: <?= $receipt['nama_lengkap'] ?></p>
-                    <p class="text-xs text-gray-400 mt-1"><?= date('d/m/Y', strtotime($receipt['tanggal_terima'])) ?></p>
+                <?php endwhile; ?>
+                <div class="mt-3 text-right">
+                    <a href="laporan_masuk.php" class="text-blue-600 hover:text-blue-800 text-sm">
+                        Lihat semua <i class="fas fa-arrow-right ml-1"></i>
+                    </a>
                 </div>
-            </div>
-            <?php endwhile; ?>
+            <?php else: ?>
+                <div class="text-center py-4 text-gray-500">
+                    <i class="fas fa-info-circle mr-1"></i> Belum ada laporan masuk terbaru
+                </div>
+            <?php endif; ?>
         </div>
     </div>
     
-    <!-- Pengeluaran Terbaru -->
+    <!-- Laporan Penjualan Hari Ini -->
     <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
         <h3 class="text-base font-medium text-gray-800 mb-4 flex items-center">
-            <i class="fas fa-shipping-fast text-red-500 mr-2"></i> Pengeluaran Terbaru
+            <i class="fas fa-cash-register text-red-500 mr-2"></i> Penjualan Hari Ini
         </h3>
         <div class="space-y-3">
-            <?php while ($outgoing = mysqli_fetch_assoc($recentOutgoings)): ?>
-            <div class="flex items-start border-b border-gray-100 pb-3">
-                <div class="rounded-full bg-red-50 p-2 mr-3 flex-shrink-0">
-                    <i class="fas fa-arrow-right text-red-500 text-xs"></i>
+            <?php if(mysqli_num_rows($todaySales) > 0): ?>
+                <?php while ($sale = mysqli_fetch_assoc($todaySales)): ?>
+                <div class="flex items-start border-b border-gray-100 pb-3">
+                    <div class="rounded-full bg-red-50 p-2 mr-3 flex-shrink-0">
+                        <i class="fas fa-receipt text-red-500 text-xs"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-800">Invoice #<?= $sale['no_invoice'] ?></p>
+                        <p class="text-xs text-gray-600 mt-0.5">
+                            <?= $sale['total_items'] ?> item | 
+                            Rp <?= number_format($sale['total_bayar'], 0, ',', '.') ?>
+                        </p>
+                        <p class="text-xs text-gray-400 mt-1">
+                            <?= date('H:i', strtotime($sale['tanggal_penjualan'])) ?> | 
+                            <?= $sale['metode_pembayaran'] ?>
+                        </p>
+                    </div>
                 </div>
-                <div>
-                    <p class="text-sm font-medium text-gray-800">Keperluan: <?= mb_strimwidth($outgoing['keperluan'], 0, 30, "...") ?></p>
-                    <p class="text-xs text-gray-600 mt-0.5">Oleh: <?= $outgoing['nama_lengkap'] ?></p>
-                    <p class="text-xs text-gray-400 mt-1"><?= date('d/m/Y', strtotime($outgoing['tanggal_keluar'])) ?></p>
+                <?php endwhile; ?>
+                <div class="mt-3 text-right">
+                    <a href="laporan_penjualan.php" class="text-blue-600 hover:text-blue-800 text-sm">
+                        Lihat semua <i class="fas fa-arrow-right ml-1"></i>
+                    </a>
                 </div>
-            </div>
-            <?php endwhile; ?>
+            <?php else: ?>
+                <div class="text-center py-4 text-gray-500">
+                    <i class="fas fa-info-circle mr-1"></i> Belum ada penjualan hari ini
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>

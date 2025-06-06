@@ -155,16 +155,16 @@ $store_info = getStoreInfo();
     <div class="flex">
         <!-- Sidebar -->
         <div id="sidebar" class="sidebar text-white w-64 px-4 py-4 fixed h-full z-50">
-            <div class="flex flex-col items-start justify-between mb-6">
-                <h2 class="text-xl font-bold flex items-center">
-                    <i class="fas fa-boxes mr-2"></i> BKIS
-                </h2>
-                <p class="text-sm font-light ml-7">(Bento Kopi Inventory System)</p>
-                <button id="sidebar-toggle" class="lg:hidden bg-blue-600 rounded-full p-2 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400">
-                    <i class="fas fa-bars"></i>
-                </button>
-            </div>
-            
+        <div class="flex flex-col items-start justify-between mb-6">
+    <h2 class="text-xl font-bold flex items-center">
+        <i class="fas fa-boxes mr-2"></i> BKIS
+    </h2>
+    <p class="text-sm font-light ml-7">(Bento Kopi Inventory System)</p>
+    <button id="sidebar-toggle" class="lg:hidden bg-blue-600 rounded-full p-2 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400">
+        <i class="fas fa-bars"></i>
+    </button>
+</div>
+
             <nav>
                 <ul class="space-y-1">
                     <li class="sidebar-item">
@@ -294,7 +294,7 @@ $store_info = getStoreInfo();
                     <?php 
                     // Cek akses untuk menu Penjualan
                     $show_penjualan = ($user_role == 'admin' || in_array($user_role, ['kasir', 'crew']));
-                    
+
                     if ($show_penjualan):
                     ?>
                     <li class="sidebar-item">

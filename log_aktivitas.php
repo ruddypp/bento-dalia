@@ -3,8 +3,8 @@ $pageTitle = "Log Aktivitas";
 require_once 'includes/header.php';
 checkLogin();
 
-// Verifikasi akses - hanya admin & manajer
-if ($_SESSION['user_role'] != 'administrator' && $_SESSION['user_role'] != 'manajer') {
+// Verifikasi akses - hanya admin
+if ($_SESSION['user_role'] != 'admin') {
     setAlert("error", "Anda tidak memiliki akses ke halaman ini!");
     header("Location: index.php");
     exit();

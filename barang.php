@@ -675,11 +675,11 @@ function isAdmin() {
                         <?php if (!isset($VIEW_ONLY) || $VIEW_ONLY !== true): ?>
                         <div class="flex items-center space-x-2">
                             <button type="button" class="bg-yellow-500 hover:bg-yellow-600 text-white p-1 rounded-md edit-button" data-id="<?= $row['id_barang'] ?>">
-                                <i class="fas fa-edit"></i>
-                            </button>
+                            <i class="fas fa-edit"></i>
+                        </button>
                             <button type="button" class="bg-red-500 hover:bg-red-600 text-white p-1 rounded-md delete-button" data-id="<?= $row['id_barang'] ?>" data-name="<?= $row['nama_barang'] ?>">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                            <i class="fas fa-trash"></i>
+                        </button>
                         </div>
                         <?php else: ?>
                         <div class="text-gray-400">

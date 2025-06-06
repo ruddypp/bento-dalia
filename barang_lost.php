@@ -330,8 +330,8 @@ if ($table_exists) {
                                 </button>
                                 
                                 <button class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md" onclick="confirmDelete(<?= $item['id_lost'] ?>)">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                                <i class="fas fa-trash"></i>
+                            </button>
                                 <?php endif; ?>
                             </div>
                         </td>
