@@ -1,0 +1,1 @@
+ALTER TABLE retur_barang ADD COLUMN id_pesanan INT DEFAULT NULL; 

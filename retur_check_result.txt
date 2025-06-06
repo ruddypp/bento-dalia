@@ -1,0 +1,82 @@
+Tabel retur_barang ditemukan.
+
+Struktur Tabel:
+id_retur - int(11) - NO - PRI -  - auto_increment
+id_barang - int(11) - NO - MUL -  - 
+qty_retur - int(11) - NO -  -  - 
+tanggal_retur - datetime - NO -  - current_timestamp() - 
+alasan_retur - text - YES -  -  - 
+id_user - int(11) - YES - MUL -  - 
+supplier - varchar(100) - YES -  -  - 
+harga_satuan - decimal(20,2) - NO -  -  - 
+total - decimal(20,2) - NO -  -  - 
+periode - int(11) - NO -  -  - 
+id_pesanan - int(11) - YES -  -  - 
+
+Data dalam Tabel:
+ID: 1, ID Barang: 8, Qty: 2, Tanggal: 2025-06-03 20:55:59
+Alasan: jlk
+User: 22, Supplier: Beno
+Harga: 2000.00, Total: 4000.00, Periode: 1
+ID Pesanan: NULL
+
+ID: 2, ID Barang: 10, Qty: 1, Tanggal: 2025-06-04 01:45:04
+Alasan: y
+User: 22, Supplier: rudy
+Harga: 8000.00, Total: 8000.00, Periode: 1
+ID Pesanan: NULL
+
+ID: 10, ID Barang: 10, Qty: 3, Tanggal: 2025-06-04 02:43:22
+Alasan: y
+User: 22, Supplier: rudy
+Harga: 8000.00, Total: 24000.00, Periode: 2
+ID Pesanan: 12
+
+ID: 11, ID Barang: 10, Qty: 1, Tanggal: 2025-06-04 02:49:56
+Alasan: y
+User: 22, Supplier: rudy
+Harga: 8000.00, Total: 8000.00, Periode: 1
+ID Pesanan: NULL
+
+
+Data Bahan Baku dengan Status Retur:
+ID: 1, ID Barang: 1, Nama: susu, Qty: 19, Status: retur
+Jumlah Retur: 0, Jumlah Masuk: 0
+Catatan Retur: NULL
+ID Pesanan: NULL
+
+ID: 32, ID Barang: 3, Nama: gula, Qty: 50, Status: retur
+Jumlah Retur: 3, Jumlah Masuk: 47
+Catatan Retur: tes
+ID Pesanan: NULL
+
+ID: 34, ID Barang: 3, Nama: gula, Qty: 5, Status: retur
+Jumlah Retur: 2, Jumlah Masuk: 3
+Catatan Retur: woy
+ID Pesanan: NULL
+
+ID: 45, ID Barang: 1, Nama: susu, Qty: 100, Status: retur
+Jumlah Retur: 50, Jumlah Masuk: 50
+Catatan Retur: hhuuhu
+ID Pesanan: NULL
+
+ID: 46, ID Barang: 8, Nama: Sawi, Qty: 2, Status: retur
+Jumlah Retur: 0, Jumlah Masuk: 0
+Catatan Retur: NULL
+ID Pesanan: 9
+
+ID: 49, ID Barang: 10, Nama: ayampok, Qty: 1, Status: retur
+Jumlah Retur: 0, Jumlah Masuk: 0
+Catatan Retur: Dari pesanan #11
+ID Pesanan: 11
+
+ID: 50, ID Barang: 10, Nama: ayampok, Qty: 1, Status: retur
+Jumlah Retur: 0, Jumlah Masuk: 0
+Catatan Retur: NULL
+ID Pesanan: NULL
+
+ID: 51, ID Barang: 10, Nama: ayampok, Qty: 3, Status: retur
+Jumlah Retur: 0, Jumlah Masuk: 0
+Catatan Retur: NULL
+ID Pesanan: 12
+
