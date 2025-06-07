@@ -921,14 +921,14 @@ if (!empty($_GET['week']) && preg_match('/^(\d{4})-W(\d{2})$/', $_GET['week'], $
                                 onclick="viewBahanBakuRetur(<?= $retur['id_bahan_baku'] ?>)">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <?php if ($_SESSION['user_role'] !== 'crew'): ?>
+                        <?php if (isset($DELETE_ALLOWED) && $DELETE_ALLOWED): ?>
                         <button class="text-red-500 hover:text-red-700" 
                                 onclick="deleteRetur(<?= $retur['id_bahan_baku'] ?>, <?= $retur['id_retur'] ?? 'null' ?>, '<?= date('d/m/Y', strtotime($retur['tanggal_input'])) ?>', '<?= $retur['nama_barang'] ?>')">
                             <i class="fas fa-trash"></i>
                         </button>
                         <?php endif; ?>
                         <?php else: ?>
-                        <?php if (!empty($retur['id_retur']) && $_SESSION['user_role'] !== 'crew'): ?>
+                        <?php if (!empty($retur['id_retur']) && isset($DELETE_ALLOWED) && $DELETE_ALLOWED): ?>
                         <button class="text-red-500 hover:text-red-700" 
                                 onclick="deleteDirectRetur(<?= $retur['id_retur'] ?>, '<?= date('d/m/Y', strtotime($retur['tanggal_retur'])) ?>', '<?= $retur['nama_barang'] ?>')">
                             <i class="fas fa-trash"></i>

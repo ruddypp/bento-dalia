@@ -986,58 +986,53 @@ function checkPermission($page) {
         return 'full';
     }
     
-    // Crew hanya memiliki akses view-only ke semua fitur
-    if ($user_role === 'crew') {
-        return 'view';
-    }
-    
     // Array permission untuk setiap role sesuai persyaratan
     $permissions = [
         'kasir' => [
-            'barang.php' => 'full',
-            'bahan_baku.php' => 'full',
+            'barang.php' => 'edit',
+            'bahan_baku.php' => 'edit',
             'supplier.php' => 'view',
             'pesan_barang.php' => 'view',
-            'retur_barang.php' => 'full',
-            'menu_makanan.php' => 'full',
-            'menu_minuman.php' => 'full',
-            'penjualan.php' => 'full',
-            'laporan_penjualan.php' => 'full',
-            'laporan_masuk.php' => 'full',
-            'index.php' => 'full',
+            'retur_barang.php' => 'edit',
+            'menu_makanan.php' => 'edit',
+            'menu_minuman.php' => 'edit',
+            'penjualan.php' => 'edit',
+            'laporan_penjualan.php' => 'edit',
+            'laporan_masuk.php' => 'edit',
+            'index.php' => 'edit',
             'profile.php' => 'full',
-            'detail_penjualan.php' => 'full'
+            'detail_penjualan.php' => 'edit'
         ],
         'crew' => [
-            'barang.php' => 'full',
-            'bahan_baku.php' => 'full',
+            'barang.php' => 'edit',
+            'bahan_baku.php' => 'edit',
             'supplier.php' => 'view',
             'pesan_barang.php' => 'view',
             'retur_barang.php' => 'view',
-            'penjualan.php' => 'full',
-            'laporan_penjualan.php' => 'full',
-            'laporan_masuk.php' => 'full',
-            'index.php' => 'full',
+            'penjualan.php' => 'edit',
+            'laporan_penjualan.php' => 'edit',
+            'laporan_masuk.php' => 'edit',
+            'index.php' => 'edit',
             'profile.php' => 'full',
-            'detail_penjualan.php' => 'full'
+            'detail_penjualan.php' => 'edit'
         ],
         'headproduksi' => [
-            'barang.php' => 'full',
+            'barang.php' => 'edit',
             'bahan_baku.php' => 'view',
-            'retur_barang.php' => 'full',
-            'barang_lost.php' => 'full',
-            'index.php' => 'full',
+            'retur_barang.php' => 'edit',
+            'barang_lost.php' => 'edit',
+            'index.php' => 'edit',
             'profile.php' => 'full'
         ],
         'purchasing' => [
-            'supplier.php' => 'full',
-            'pesan_barang.php' => 'full',
+            'supplier.php' => 'edit',
+            'pesan_barang.php' => 'edit',
             'barang.php' => 'view',
-            'bahan_baku.php' => 'full',
+            'bahan_baku.php' => 'edit',
             'retur_barang.php' => 'view',
             'barang_lost.php' => 'view',
-            'laporan_masuk.php' => 'full',
-            'index.php' => 'full',
+            'laporan_masuk.php' => 'edit',
+            'index.php' => 'edit',
             'profile.php' => 'full'
         ]
     ];
@@ -1048,7 +1043,7 @@ function checkPermission($page) {
     }
     
     // Jika tidak memiliki akses, redirect ke halaman error atau dashboard
-    header("Location: index.php?error=unauthorized&page=" . urlencode($current_page));
+    header("Location: index.php?error=unauthorized&page=" . urlencode($page));
     exit();
 }
 
@@ -1069,7 +1064,19 @@ function hasEditPermission() {
     // Cek permission untuk halaman saat ini
     $permission = checkPermission($current_page);
     
-    // Hanya return true jika permission adalah 'full'
-    return $permission === 'full';
+    // Hanya return true jika permission adalah 'full' atau 'edit'
+    return $permission === 'full' || $permission === 'edit';
+}
+
+// Fungsi untuk memeriksa apakah user memiliki akses delete
+function hasDeletePermission() {
+    if (!isset($_SESSION['user_id'])) {
+        return false;
+    }
+    
+    $user_role = $_SESSION['user_role'];
+    
+    // Hanya admin yang dapat menghapus data
+    return $user_role === 'admin';
 }
 ?>

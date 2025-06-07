@@ -9,4 +9,19 @@ php_flag display_errors on
 php_value error_reporting E_ALL
 
 # Prevent directory listing
-Options -Indexes 
+Options -Indexes
+
+# Allow access to uploads directory
+<Directory "uploads">
+    Options +Indexes
+    Order allow,deny
+    Allow from all
+    Require all granted
+</Directory>
+
+# Handle image files properly
+<FilesMatch "\.(jpg|jpeg|png|gif)$">
+    Order allow,deny
+    Allow from all
+    Require all granted
+</FilesMatch> 

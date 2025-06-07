@@ -37,7 +37,17 @@ if (in_array($current_page, $always_allowed)) {
 // If permission is 'view', set a global variable to disable edit/delete functionality
 if ($permission === 'view') {
     $VIEW_ONLY = true;
-} elseif ($permission !== 'full') {
+    $EDIT_ALLOWED = false;
+    $DELETE_ALLOWED = false;
+} elseif ($permission === 'edit') {
+    $VIEW_ONLY = false;
+    $EDIT_ALLOWED = true;
+    $DELETE_ALLOWED = false;
+} elseif ($permission === 'full') {
+    $VIEW_ONLY = false;
+    $EDIT_ALLOWED = true;
+    $DELETE_ALLOWED = true;
+} else {
     // If no permission, redirect to dashboard with error message
     header("Location: index.php?error=unauthorized&page=" . urlencode($current_page));
     exit();

@@ -390,130 +390,90 @@ if ($table_check->num_rows > 0) {
             <?= $edit_mode ? 'Edit Menu Makanan' : 'Tambah Menu Makanan Baru' ?>
         </h2>
         
-        <form method="POST" action="<?= $_SERVER['PHP_SELF'] ?>" enctype="multipart/form-data" class="transition-all duration-300">
-            <?php if ($edit_mode): ?>
+        <form id="menuForm" method="POST" action="" enctype="multipart/form-data" class="mt-4">
+            <?php if (isset($edit_mode) && $edit_mode): ?>
             <input type="hidden" name="id_menu" value="<?= $id_menu ?>">
             <?php endif; ?>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="form-group transition-all duration-200">
-                    <label for="nama_menu" class="block text-sm font-medium text-gray-700 mb-1">Nama Menu</label>
-                    <input type="text" id="nama_menu" name="nama_menu" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200" value="<?= htmlspecialchars($nama_menu) ?>" required>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="mb-4">
+                    <label for="nama_menu" class="block text-gray-700 text-sm font-medium mb-2">Nama Menu</label>
+                    <input type="text" id="nama_menu" name="nama_menu" value="<?= htmlspecialchars($nama_menu) ?>" required 
+                           class="shadow-sm border border-gray-300 rounded-md w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
                 
-                <div class="form-group transition-all duration-200">
-                    <label for="harga" class="block text-sm font-medium text-gray-700 mb-1">Harga Jual (Rp)</label>
+                <div class="mb-4">
+                    <label for="harga" class="block text-gray-700 text-sm font-medium mb-2">Harga Jual</label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="text-gray-500">Rp</span>
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-600">
+                            Rp
+                        </span>
+                        <input type="number" id="harga" name="harga" value="<?= $harga ?>" required min="0" step="100"
+                               class="shadow-sm border border-gray-300 rounded-md w-full py-2 pl-10 pr-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
-                        <input type="number" id="harga" name="harga" min="0" step="1000" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200" value="<?= htmlspecialchars($harga) ?>" required>
                     </div>
                 </div>
                 
-                <div class="form-group transition-all duration-200 md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Bahan-bahan</label>
-                    <div id="bahan-container" class="space-y-2">
-                        <?php if (empty($bahan_items)): ?>
-                        <div class="bahan-item flex space-x-2">
-                            <select class="bahan-select w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200">
-                                <option value="">-- Pilih Bahan --</option>
-                                <?php foreach ($barang_list as $barang): ?>
-                                <option value="<?= $barang['id_barang'] ?>" data-harga="<?= $barang['harga'] ?>" data-satuan="<?= $barang['satuan'] ?>"><?= htmlspecialchars($barang['nama_barang']) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <div class="relative w-1/4">
-                                <input type="number" class="bahan-qty w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200" min="0.1" step="0.1" placeholder="Jumlah">
-                                <span class="bahan-satuan absolute right-3 top-2 text-gray-500"></span>
-                            </div>
-                            <button type="button" class="remove-bahan px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                        <?php else: ?>
-                        <?php foreach ($bahan_items as $item): ?>
-                        <div class="bahan-item flex space-x-2">
-                            <select class="bahan-select w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200">
-                                <option value="">-- Pilih Bahan --</option>
-                                <?php foreach ($barang_list as $barang): ?>
-                                <option value="<?= $barang['id_barang'] ?>" data-harga="<?= $barang['harga'] ?>" data-satuan="<?= $barang['satuan'] ?>" <?= ($barang['nama_barang'] == $item['nama']) ? 'selected' : '' ?>><?= htmlspecialchars($barang['nama_barang']) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <div class="relative w-1/4">
-                                <input type="number" class="bahan-qty w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200" min="0.1" step="0.1" placeholder="Jumlah" value="<?= $item['jumlah'] ?>">
-                                <span class="bahan-satuan absolute right-3 top-2 text-gray-500"></span>
-                            </div>
-                            <button type="button" class="remove-bahan px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                        <?php endforeach; ?>
-                        <?php endif; ?>
-                    </div>
-                    <button type="button" id="add-bahan" class="mt-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200">
-                        <i class="fas fa-plus mr-1"></i> Tambah Bahan
-                    </button>
-                    <input type="hidden" id="bahan" name="bahan" value="<?= htmlspecialchars($bahan) ?>">
-                </div>
-                
-                <div class="form-group transition-all duration-200">
-                    <label for="harga_modal" class="block text-sm font-medium text-gray-700 mb-1">Harga Modal (Rp)</label>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="mb-4">
+                    <label for="harga_modal" class="block text-gray-700 text-sm font-medium mb-2">Harga Modal (otomatis)</label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="text-gray-500">Rp</span>
-                        </div>
-                        <input type="number" id="harga_modal" name="harga_modal" min="0" step="1000" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200" value="<?= htmlspecialchars($harga_modal) ?>">
-                    </div>
-                </div>
-                
-                <div class="form-group transition-all duration-200">
-                    <label for="keuntungan" class="block text-sm font-medium text-gray-700 mb-1">Keuntungan (Rp)</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="text-gray-500">Rp</span>
-                        </div>
-                        <input type="number" id="keuntungan" name="keuntungan" min="0" step="1000" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200" value="<?= htmlspecialchars($keuntungan) ?>">
-                    </div>
-                </div>
-                
-                <div class="form-group transition-all duration-200">
-                    <label for="deskripsi" class="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
-                    <textarea id="deskripsi" name="deskripsi" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"><?= htmlspecialchars($deskripsi) ?></textarea>
-                </div>
-                
-                <div class="form-group transition-all duration-200">
-                    <label for="foto" class="block text-sm font-medium text-gray-700 mb-1">Foto Menu</label>
-                    <div class="flex items-center">
-                        <label class="w-full flex flex-col items-center px-4 py-2 bg-white text-green-500 rounded-lg border border-green-500 border-dashed cursor-pointer hover:bg-green-50 transition-colors duration-200">
-                            <span class="flex items-center">
-                                <i class="fas fa-cloud-upload-alt mr-2"></i>
-                                <span>Pilih Gambar</span>
-                            </span>
-                            <input type="file" id="foto" name="foto" class="hidden" accept="image/*">
-                        </label>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1">Format: JPG, JPEG, PNG, GIF. Maks: 2MB</p>
-                    
-                    <?php if ($edit_mode && !empty($foto)): ?>
-                    <div class="mt-3">
-                        <p class="text-sm text-gray-600 mb-1">Foto saat ini:</p>
-                        <div class="relative group">
-                            <img src="<?= $uploadDir . $foto ?>" alt="<?= htmlspecialchars($nama_menu) ?>" class="w-32 h-32 object-cover rounded-md border border-gray-200">
-                            <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200 rounded-md">
-                                <span class="text-white text-xs">Foto saat ini</span>
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-600">
+                            Rp
+                        </span>
+                        <input type="number" id="harga_modal" name="harga_modal" value="<?= $harga_modal ?>" 
+                               class="shadow-sm border border-gray-300 rounded-md w-full py-2 pl-10 pr-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="keuntungan" class="block text-gray-700 text-sm font-medium mb-2">Keuntungan (otomatis)</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-600">
+                            Rp
+                        </span>
+                        <input type="number" id="keuntungan" name="keuntungan" value="<?= $keuntungan ?>" 
+                               class="shadow-sm border border-gray-300 rounded-md w-full py-2 pl-10 pr-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
+                    </div>
+                </div>
+                
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-medium mb-2">Bahan-bahan</label>
+                <div id="bahanContainer" class="mb-2 border border-gray-300 rounded-md p-3 bg-gray-50">
+                    <!-- Bahan items will be added here -->
+                        </div>
+                <input type="hidden" id="bahanInput" name="bahan" value="<?= htmlspecialchars($bahan) ?>">
+                <button type="button" id="addBahanBtn" class="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded-md text-sm transition-colors duration-200">
+                    <i class="fas fa-plus mr-1"></i> Tambah Bahan
+                </button>
+                </div>
+                
+            <div class="mb-4">
+                <label for="deskripsi" class="block text-gray-700 text-sm font-medium mb-2">Deskripsi</label>
+                <textarea id="deskripsi" name="deskripsi" rows="3" 
+                       class="shadow-sm border border-gray-300 rounded-md w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"><?= htmlspecialchars($deskripsi) ?></textarea>
+                </div>
+                
+            <div class="mb-4">
+                <label for="foto" class="block text-gray-700 text-sm font-medium mb-2">Foto Menu</label>
+                <?php if (!empty($foto) && file_exists($uploadDir . $foto)): ?>
+                <div class="mb-2">
+                    <img src="<?= $uploadDir . $foto ?>" alt="<?= htmlspecialchars($nama_menu) ?>" class="w-32 h-32 object-cover rounded-md border">
+                    <p class="text-sm text-gray-600">Foto saat ini: <?= $foto ?></p>
                     </div>
                     <?php endif; ?>
-                </div>
+                <input type="file" id="foto" name="foto" accept="image/*" 
+                       class="shadow-sm border border-gray-300 rounded-md w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <p class="text-xs text-gray-500 mt-1">Format: JPG, JPEG, PNG, GIF. Ukuran max: 2MB.</p>
             </div>
             
-            <div class="flex justify-end mt-6 space-x-2">
-                <a href="menu_makanan.php" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition duration-200 flex items-center">
-                    <i class="fas fa-times mr-1"></i> Batal
+            <div class="flex justify-end space-x-2 mt-6">
+                <a href="menu_makanan.php" class="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-md text-sm transition-colors duration-200">
+                    Batal
                 </a>
-                <button type="submit" name="submit_menu" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-200 flex items-center">
-                    <i class="fas fa-save mr-1"></i> <?= $edit_mode ? 'Update Menu' : 'Simpan Menu' ?>
+                <button type="submit" name="submit_menu" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md text-sm transition-colors duration-200">
+                    <?= isset($edit_mode) && $edit_mode ? 'Update Menu' : 'Simpan Menu' ?>
                 </button>
             </div>
         </form>
@@ -686,466 +646,486 @@ if ($table_check->num_rows > 0) {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Variables for pagination
-    let currentPage = 1;
-    let itemsPerPage = 16;
-    let menuItems = Array.from(document.querySelectorAll('.menu-card'));
-    let totalItems = menuItems.length;
-    
-    // Initialize
-    updatePagination();
-    showCurrentPage();
-    
-    // Search functionality
-    const searchInput = document.getElementById('searchInput');
-    searchInput.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
+    try {
+        // Variables for pagination
+        let currentPage = 1;
+        let itemsPerPage = 16;
+        let menuItems = [];
+        try {
+            menuItems = Array.from(document.querySelectorAll('.menu-card') || []);
+        } catch (e) {
+            console.error('Error initializing menu items:', e);
+        }
+        let totalItems = menuItems.length;
         
-        menuItems.forEach(item => {
-            const menuName = item.querySelector('h3').textContent.toLowerCase();
-            const menuDesc = item.querySelector('.text-gray-600')?.textContent.toLowerCase() || '';
-            
-            if (menuName.includes(searchTerm) || menuDesc.includes(searchTerm)) {
-                item.classList.remove('hidden');
-            } else {
-                item.classList.add('hidden');
-            }
-        });
-        
-        // Reset pagination after search
-        currentPage = 1;
-        menuItems = Array.from(document.querySelectorAll('.menu-card:not(.hidden)'));
-        totalItems = menuItems.length;
+        // Initialize
         updatePagination();
         showCurrentPage();
-    });
-    
-    // Items per page change
-    const itemsPerPageSelect = document.getElementById('itemsPerPage');
-    itemsPerPageSelect.addEventListener('change', function() {
-        if (this.value === 'all') {
-            itemsPerPage = totalItems;
-        } else {
-            itemsPerPage = parseInt(this.value);
-        }
         
-        currentPage = 1;
-        updatePagination();
-        showCurrentPage();
-    });
-    
-    // Previous page button
-    document.getElementById('prevPage').addEventListener('click', function() {
-        if (currentPage > 1) {
-            currentPage--;
-            updatePagination();
-            showCurrentPage();
-        }
-    });
-    
-    // Next page button
-    document.getElementById('nextPage').addEventListener('click', function() {
-        if (currentPage < Math.ceil(totalItems / itemsPerPage)) {
-            currentPage++;
-            updatePagination();
-            showCurrentPage();
-        }
-    });
-    
-    // Function to update pagination
-    function updatePagination() {
-        const totalPages = Math.ceil(totalItems / itemsPerPage);
-        const paginationContainer = document.getElementById('pagination');
-        paginationContainer.innerHTML = '';
-        
-        // Update prev/next button states
-        document.getElementById('prevPage').disabled = currentPage === 1;
-        document.getElementById('nextPage').disabled = currentPage === totalPages || totalPages === 0;
-        
-        // Create page buttons
-        let startPage = Math.max(1, currentPage - 2);
-        let endPage = Math.min(totalPages, startPage + 4);
-        
-        if (endPage - startPage < 4) {
-            startPage = Math.max(1, endPage - 4);
-        }
-        
-        for (let i = startPage; i <= endPage; i++) {
-            const pageButton = document.createElement('button');
-            pageButton.textContent = i;
-            pageButton.className = `px-3 py-1 rounded-md ${i === currentPage ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`;
-            pageButton.addEventListener('click', function() {
-                currentPage = i;
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                
+                menuItems.forEach(item => {
+                    const menuName = item.querySelector('h3')?.textContent.toLowerCase() || '';
+                    const menuDesc = item.querySelector('.text-gray-600')?.textContent.toLowerCase() || '';
+                    
+                    if (menuName.includes(searchTerm) || menuDesc.includes(searchTerm)) {
+                        item.classList.remove('hidden');
+                    } else {
+                        item.classList.add('hidden');
+                    }
+                });
+                
+                // Reset pagination after search
+                currentPage = 1;
+                menuItems = Array.from(document.querySelectorAll('.menu-card:not(.hidden)') || []);
+                totalItems = menuItems.length;
                 updatePagination();
                 showCurrentPage();
             });
-            paginationContainer.appendChild(pageButton);
         }
         
-        // Update info text
-        const startItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
-        const endItem = Math.min(currentPage * itemsPerPage, totalItems);
-        
-        document.getElementById('startItem').textContent = startItem;
-        document.getElementById('endItem').textContent = endItem;
-        document.getElementById('totalItems').textContent = totalItems;
-    }
-    
-    // Function to show current page
-    function showCurrentPage() {
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        
-        menuItems.forEach((item, index) => {
-            if (index >= startIndex && index < endIndex) {
-                item.style.display = '';
-            } else {
-                item.style.display = 'none';
-            }
-        });
-    }
-    
-    // Detail view functionality
-    const menuCards = document.querySelectorAll('.menu-card');
-    menuCards.forEach(card => {
-        const menuImage = card.querySelector('img');
-        if (menuImage) {
-            menuImage.addEventListener('click', function() {
-                showDetailModal(card);
+        // Items per page change
+        const itemsPerPageSelect = document.getElementById('itemsPerPage');
+        if (itemsPerPageSelect) {
+            itemsPerPageSelect.addEventListener('change', function() {
+                if (this.value === 'all') {
+                    itemsPerPage = totalItems;
+                } else {
+                    itemsPerPage = parseInt(this.value);
+                }
+                
+                currentPage = 1;
+                updatePagination();
+                showCurrentPage();
             });
         }
-    });
-    
-    // Close detail modal
-    document.getElementById('closeDetailBtn').addEventListener('click', function() {
-        const modal = document.getElementById('detailModal');
+        
+        // Previous page button
+        const prevPageBtn = document.getElementById('prevPage');
+        if (prevPageBtn) {
+            prevPageBtn.addEventListener('click', function() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    updatePagination();
+                    showCurrentPage();
+                }
+            });
+        }
+        
+        // Next page button
+        const nextPageBtn = document.getElementById('nextPage');
+        if (nextPageBtn) {
+            nextPageBtn.addEventListener('click', function() {
+                if (currentPage < Math.ceil(totalItems / itemsPerPage)) {
+                    currentPage++;
+                    updatePagination();
+                    showCurrentPage();
+                }
+            });
+        }
+        
+        // Function to update pagination
+        function updatePagination() {
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const paginationContainer = document.getElementById('pagination');
+            
+            // Check if elements exist before trying to access them
+            if (!paginationContainer) {
+                console.warn('Pagination container not found');
+                return;
+            }
+            
+            paginationContainer.innerHTML = '';
+            
+            // Update prev/next button states
+            const prevPageBtn = document.getElementById('prevPage');
+            const nextPageBtn = document.getElementById('nextPage');
+            
+            if (prevPageBtn) {
+                prevPageBtn.disabled = currentPage === 1;
+            }
+            
+            if (nextPageBtn) {
+                nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+            }
+            
+            // Create page buttons
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+            
+            if (endPage - startPage < 4) {
+                startPage = Math.max(1, endPage - 4);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageButton = document.createElement('button');
+                pageButton.textContent = i;
+                pageButton.className = `px-3 py-1 rounded-md ${i === currentPage ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`;
+                pageButton.addEventListener('click', function() {
+                    currentPage = i;
+                    updatePagination();
+                    showCurrentPage();
+                });
+                paginationContainer.appendChild(pageButton);
+            }
+            
+            // Update info text
+            const startItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+            const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+            
+            const startItemEl = document.getElementById('startItem');
+            const endItemEl = document.getElementById('endItem');
+            const totalItemsEl = document.getElementById('totalItems');
+            
+            if (startItemEl) startItemEl.textContent = startItem;
+            if (endItemEl) endItemEl.textContent = endItem;
+            if (totalItemsEl) totalItemsEl.textContent = totalItems;
+        }
+        
+        // Function to show current page
+        function showCurrentPage() {
+            try {
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const endIndex = startIndex + itemsPerPage;
+                
+                if (!menuItems || !Array.isArray(menuItems)) {
+                    console.warn('menuItems is not properly initialized:', menuItems);
+                    return;
+                }
+                
+                menuItems.forEach((item, index) => {
+                    if (!item) {
+                        console.warn('Invalid menu item at index', index);
+                        return;
+                    }
+                    
+                    if (index >= startIndex && index < endIndex) {
+                        item.classList.remove('hidden');
+                    } else {
+                        item.classList.add('hidden');
+                    }
+                });
+            } catch (error) {
+                console.error('Error in showCurrentPage:', error);
+            }
+        }
+        
+        // Function to show detail modal
+        function showDetailModal(card) {
+            try {
+                const detailModal = document.getElementById('detailModal');
+                const modalContent = document.getElementById('modalContent');
+                
+                if (!detailModal || !modalContent) {
+                    console.error('Detail modal elements not found');
+                    return;
+                }
+                
+                const title = card.querySelector('h3')?.textContent || 'Detail Menu';
+                const price = card.querySelector('.price')?.textContent || '';
+                const image = card.querySelector('img')?.src || '';
+                const description = card.querySelector('.text-gray-600')?.textContent || '';
+                
+                const detailTitle = document.getElementById('detailTitle');
+                const detailContent = document.getElementById('detailContent');
+                
+                if (detailTitle) detailTitle.textContent = title;
+                if (detailContent) {
+                    detailContent.innerHTML = `
+                        <div class="flex flex-col md:flex-row">
+                            <div class="w-full md:w-1/3 mb-4 md:mb-0 md:mr-6">
+                                <img src="${image}" class="w-full h-auto rounded-lg shadow-md" alt="${title}">
+                            </div>
+                            <div class="w-full md:w-2/3">
+                                <div class="mb-4">
+                                    <p class="text-gray-600 mb-4">${description}</p>
+                                    <p class="text-xl font-semibold text-gray-800">${price}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                detailModal.classList.remove('hidden');
+                setTimeout(() => {
+                    modalContent.classList.remove('scale-90', 'opacity-0');
+                    modalContent.classList.add('scale-100', 'opacity-100');
+                }, 50);
+            } catch (error) {
+                console.error('Error showing detail modal:', error);
+            }
+        }
+        
+        // Detail modal functionality
+        const detailModal = document.getElementById('detailModal');
         const modalContent = document.getElementById('modalContent');
         
-        modalContent.classList.remove('scale-100', 'opacity-100');
-        modalContent.classList.add('scale-90', 'opacity-0');
-        
-        setTimeout(() => {
-            modal.classList.add('hidden');
-        }, 300);
-    });
-    
-    // Close modal when clicking outside
-    document.getElementById('detailModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            document.getElementById('closeDetailBtn').click();
-        }
-    });
-
-    // Bahan-bahan management
-    const bahanContainer = document.getElementById('bahan-container');
-    const addBahanBtn = document.getElementById('add-bahan');
-    const bahanInput = document.getElementById('bahan');
-    const hargaInput = document.getElementById('harga');
-    const hargaModalInput = document.getElementById('harga_modal');
-    const keuntunganInput = document.getElementById('keuntungan');
-    
-    // Add event listener to add bahan button
-    addBahanBtn.addEventListener('click', function() {
-        addBahanItem();
-    });
-    
-    // Initialize existing bahan items
-    document.querySelectorAll('.bahan-item').forEach(item => {
-        setupBahanItem(item);
-    });
-    
-    // Function to add new bahan item
-    function addBahanItem() {
-        const bahanItem = document.createElement('div');
-        bahanItem.className = 'bahan-item flex space-x-2';
-        
-        // Clone the first select element to get all options
-        const selectTemplate = bahanContainer.querySelector('.bahan-select');
-        const select = selectTemplate ? selectTemplate.cloneNode(true) : document.createElement('select');
-        select.className = 'bahan-select w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200';
-        select.value = '';
-        
-        // If no template exists, create options
-        if (!selectTemplate) {
-            const defaultOption = document.createElement('option');
-            defaultOption.value = '';
-            defaultOption.textContent = '-- Pilih Bahan --';
-            select.appendChild(defaultOption);
+        // Show detail modal when clicking on a card
+        try {
+            const cards = document.querySelectorAll('.menu-card');
+            if (cards && cards.length > 0) {
+                cards.forEach(card => {
+                    if (card) {
+                        card.addEventListener('click', function(e) {
+                            // Ignore clicks on buttons inside the card
+                            if (e.target.closest('a, button')) return;
+                            showDetailModal(this);
+                        });
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error setting up card click handlers:', error);
         }
         
-        const qtyContainer = document.createElement('div');
-        qtyContainer.className = 'relative w-1/4';
-        
-        const qtyInput = document.createElement('input');
-        qtyInput.type = 'number';
-        qtyInput.className = 'bahan-qty w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200';
-        qtyInput.min = '0.1';
-        qtyInput.step = '0.1';
-        qtyInput.placeholder = 'Jumlah';
-        
-        const satuanSpan = document.createElement('span');
-        satuanSpan.className = 'bahan-satuan absolute right-3 top-2 text-gray-500';
-        
-        qtyContainer.appendChild(qtyInput);
-        qtyContainer.appendChild(satuanSpan);
-        
-        const removeBtn = document.createElement('button');
-        removeBtn.type = 'button';
-        removeBtn.className = 'remove-bahan px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200';
-        removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
-        
-        bahanItem.appendChild(select);
-        bahanItem.appendChild(qtyContainer);
-        bahanItem.appendChild(removeBtn);
-        
-        bahanContainer.appendChild(bahanItem);
-        
-        // Setup event listeners
-        setupBahanItem(bahanItem);
-    }
-    
-    // Function to setup bahan item event listeners
-    function setupBahanItem(item) {
-        const select = item.querySelector('.bahan-select');
-        const qtyInput = item.querySelector('.bahan-qty');
-        const satuanSpan = item.querySelector('.bahan-satuan');
-        const removeBtn = item.querySelector('.remove-bahan');
-        
-        // Update satuan when select changes
-        select.addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            if (selectedOption.value) {
-                satuanSpan.textContent = selectedOption.dataset.satuan;
-            } else {
-                satuanSpan.textContent = '';
-            }
-            updateBahanInput();
-            calculateHargaModal();
-        });
-        
-        // Update bahan input when qty changes
-        qtyInput.addEventListener('input', function() {
-            updateBahanInput();
-            calculateHargaModal();
-        });
-        
-        // Remove bahan item
-        removeBtn.addEventListener('click', function() {
-            item.remove();
-            updateBahanInput();
-            calculateHargaModal();
-        });
-    }
-    
-    // Function to update hidden bahan input
-    function updateBahanInput() {
-        const bahanItems = document.querySelectorAll('.bahan-item');
-        const bahanValues = [];
-        
-        bahanItems.forEach(item => {
-            const select = item.querySelector('.bahan-select');
-            const qtyInput = item.querySelector('.bahan-qty');
-            
-            if (select.value && qtyInput.value) {
-                const selectedOption = select.options[select.selectedIndex];
-                const nama = selectedOption.textContent;
-                const jumlah = qtyInput.value;
-                bahanValues.push(`${nama}:${jumlah}`);
-            }
-        });
-        
-        bahanInput.value = bahanValues.join(', ');
-    }
-    
-    // Function to calculate harga modal
-    function calculateHargaModal() {
-        let totalModal = 0;
-        const bahanItems = document.querySelectorAll('.bahan-item');
-        
-        bahanItems.forEach(item => {
-            const select = item.querySelector('.bahan-select');
-            const qtyInput = item.querySelector('.bahan-qty');
-            
-            if (select.value && qtyInput.value) {
-                const selectedOption = select.options[select.selectedIndex];
-                const harga = parseFloat(selectedOption.dataset.harga);
-                const jumlah = parseFloat(qtyInput.value);
+        // Close detail modal when clicking the close button
+        const closeDetailBtn = document.getElementById('closeDetailBtn');
+        if (closeDetailBtn && modalContent && detailModal) {
+            closeDetailBtn.addEventListener('click', function() {
+                modalContent.classList.remove('scale-100', 'opacity-100');
+                modalContent.classList.add('scale-90', 'opacity-0');
                 
-                if (!isNaN(harga) && !isNaN(jumlah)) {
-                    totalModal += harga * jumlah;
+                setTimeout(() => {
+                    detailModal.classList.add('hidden');
+                }, 300);
+            });
+            
+            // Close detail modal when clicking outside
+            detailModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeDetailBtn.click();
+                }
+            });
+        }
+
+        // Form handling for bahan-bahan
+        const bahanContainer = document.getElementById('bahanContainer');
+        const bahanInput = document.getElementById('bahanInput');
+        const addBahanBtn = document.getElementById('addBahanBtn');
+        const hargaInput = document.getElementById('harga');
+        const hargaModalInput = document.getElementById('harga_modal');
+        const keuntunganInput = document.getElementById('keuntungan');
+        
+        // Add bahan button
+        if (addBahanBtn && bahanContainer && bahanInput) {
+            addBahanBtn.addEventListener('click', function() {
+                addBahanItem();
+            });
+            
+            // Initialize bahan items if we have existing value
+            const existingBahan = bahanInput.value;
+            if (existingBahan) {
+                const bahanItems = existingBahan.split(',');
+                bahanItems.forEach(item => {
+                    const parts = item.split(':');
+                    if (parts.length >= 2) {
+                        const nama = parts[0].trim();
+                        const jumlah = parts[1].trim();
+                        addBahanItem(nama, jumlah);
+                    }
+                });
+            } else {
+                // Add an empty bahan item if there are none
+                addBahanItem();
+            }
+        } else {
+            console.warn('Some bahan-bahan elements are missing:', {
+                bahanContainer: !!bahanContainer,
+                addBahanBtn: !!addBahanBtn,
+                bahanInput: !!bahanInput
+            });
+        }
+        
+        // Function to add a bahan item to the form
+        function addBahanItem(selectedBahan = '', selectedQty = '') {
+            if (!bahanContainer) {
+                console.warn('Cannot add bahan item: bahanContainer not found');
+                return;
+            }
+            
+            const bahanItem = document.createElement('div');
+            bahanItem.className = 'bahan-item flex items-center space-x-2 mb-2';
+            
+            // Generate options HTML for all barang items
+            let optionsHtml = '<option value="">Pilih Bahan</option>';
+            <?php foreach ($barang_list as $id_barang => $barang): ?>
+            optionsHtml += `<option value="<?= $id_barang ?>" data-satuan="<?= htmlspecialchars($barang['satuan']) ?>" data-harga="<?= $barang['harga'] ?>"><?= htmlspecialchars($barang['nama_barang']) ?></option>`;
+            <?php endforeach; ?>
+            
+            bahanItem.innerHTML = `
+                <select class="bahan-select shadow-sm border border-gray-300 rounded-md flex-grow py-2 px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    ${optionsHtml}
+                </select>
+                <div class="flex items-center w-1/3">
+                    <input type="number" class="bahan-qty shadow-sm border border-gray-300 rounded-l-md w-full py-2 px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" value="${selectedQty}" min="0.01" step="0.01" placeholder="Qty">
+                    <span class="bahan-satuan inline-flex items-center px-3 py-2 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm"></span>
+                </div>
+                <button type="button" class="remove-bahan text-red-500 hover:text-red-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            bahanContainer.appendChild(bahanItem);
+            
+            // Setup event listeners
+            setupBahanItem(bahanItem);
+            
+            // Set the selected bahan if provided
+            if (selectedBahan) {
+                const select = bahanItem.querySelector('.bahan-select');
+                if (select) {
+                    for (let i = 0; i < select.options.length; i++) {
+                        if (select.options[i].textContent.trim() === selectedBahan) {
+                            select.selectedIndex = i;
+                            // Trigger change event to update satuan
+                            const event = new Event('change');
+                            select.dispatchEvent(event);
+                            break;
+                        }
+                    }
                 }
             }
-        });
-        
-        hargaModalInput.value = totalModal;
-        calculateKeuntungan();
-    }
-    
-    // Function to calculate keuntungan
-    function calculateKeuntungan() {
-        const hargaJual = parseFloat(hargaInput.value) || 0;
-        const hargaModal = parseFloat(hargaModalInput.value) || 0;
-        const keuntungan = hargaJual - hargaModal;
-        
-        keuntunganInput.value = keuntungan;
-    }
-    
-    // Calculate keuntungan when harga jual changes
-    hargaInput.addEventListener('input', calculateKeuntungan);
-    
-    // Initial calculations
-    calculateHargaModal();
-});
-
-// Konfirmasi hapus menu
-function confirmDelete(id, name) {
-    const modal = document.getElementById('deleteModal');
-    const modalContent = document.getElementById('deleteModalContent');
-    const menuToDelete = document.getElementById('menuToDelete');
-    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-    
-    menuToDelete.textContent = name;
-    confirmDeleteBtn.href = `menu_makanan.php?delete=${id}`;
-    
-    modal.classList.remove('hidden');
-    
-    // Add animation
-    setTimeout(() => {
-        modalContent.classList.remove('scale-90', 'opacity-0');
-        modalContent.classList.add('scale-100', 'opacity-100');
-    }, 10);
-    
-    // Event listener untuk tombol batal
-    document.getElementById('cancelDeleteBtn').addEventListener('click', function() {
-        modalContent.classList.remove('scale-100', 'opacity-100');
-        modalContent.classList.add('scale-90', 'opacity-0');
-        
-        setTimeout(() => {
-            modal.classList.add('hidden');
-        }, 300);
-    });
-    
-    // Close modal when clicking outside
-    modal.addEventListener('click', function(e) {
-        if (e.target === this) {
-            document.getElementById('cancelDeleteBtn').click();
         }
-    });
-}
-
-// Show detail modal
-function showDetailModal(card) {
-    const modal = document.getElementById('detailModal');
-    const modalContent = document.getElementById('modalContent');
-    const detailTitle = document.getElementById('detailTitle');
-    const detailContent = document.getElementById('detailContent');
-    
-    const menuName = card.querySelector('h3').textContent;
-    const menuImage = card.querySelector('img')?.src || '';
-    const menuPrice = card.querySelector('.bg-green-500').textContent;
-    const menuIngredients = card.querySelector('.mb-3 p').textContent;
-    const menuDesc = card.querySelectorAll('.mb-3 p')[1]?.textContent || 'Tidak ada deskripsi';
-    
-    // Ambil informasi harga modal dan keuntungan
-    const hargaModalText = card.querySelector('.flex.justify-between:nth-child(1) .text-gray-700').textContent;
-    const hargaJualText = card.querySelector('.flex.justify-between:nth-child(2) .text-green-600').textContent;
-    const keuntunganText = card.querySelector('.flex.justify-between:nth-child(3) .text-blue-600').textContent;
-    const persentaseText = card.querySelector('.flex.justify-between:nth-child(4) span:last-child').textContent;
-    const persentaseClass = card.querySelector('.flex.justify-between:nth-child(4) span:last-child').classList.contains('text-green-600') ? 'text-green-600' : 'text-yellow-600';
-    
-    detailTitle.textContent = menuName;
-    
-    let content = `
-        <div class="flex flex-col md:flex-row">
-            <div class="md:w-1/2 mb-6 md:mb-0 md:pr-6">
-                ${menuImage ? `
-                <div class="relative overflow-hidden rounded-xl shadow-lg">
-                    <img src="${menuImage}" alt="${menuName}" class="w-full h-80 object-cover">
-                    <div class="absolute top-4 right-4 bg-green-500 text-white font-bold py-2 px-4 rounded-full shadow-lg">
-                        ${menuPrice}
-                    </div>
-                </div>` : 
-                `<div class="w-full h-80 bg-gray-200 flex items-center justify-center rounded-xl">
-                    <i class="fas fa-utensils text-gray-400 text-6xl"></i>
-                </div>`}
-            </div>
-            <div class="md:w-1/2">
-                <div class="mb-6">
-                    <h4 class="text-lg font-semibold text-gray-800 mb-2 flex items-center">
-                        <i class="fas fa-info-circle text-green-500 mr-2"></i>
-                        Informasi Menu
-                    </h4>
-                    <div class="bg-green-50 p-4 rounded-lg">
-                        <div class="mb-4">
-                            <h5 class="text-sm font-semibold text-gray-700 mb-1">Harga Modal:</h5>
-                            <p class="text-xl font-bold text-gray-700">${hargaModalText}</p>
-                        </div>
-                        <div class="mb-4">
-                            <h5 class="text-sm font-semibold text-gray-700 mb-1">Harga Jual:</h5>
-                            <p class="text-xl font-bold text-green-600">${hargaJualText}</p>
-                        </div>
-                        <div class="mb-4">
-                            <h5 class="text-sm font-semibold text-gray-700 mb-1">Keuntungan:</h5>
-                            <p class="text-xl font-bold text-blue-600">${keuntunganText} <span class="text-base font-semibold ${persentaseClass}">(${persentaseText})</span></p>
-                        </div>
-                        <div class="mb-4">
-                            <h5 class="text-sm font-semibold text-gray-700 mb-1">Bahan-bahan:</h5>
-                            <p class="text-gray-600">${menuIngredients}</p>
-                        </div>
-                        <div>
-                            <h5 class="text-sm font-semibold text-gray-700 mb-1">Deskripsi:</h5>
-                            <p class="text-gray-600">${menuDesc}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    detailContent.innerHTML = content;
-    modal.classList.remove('hidden');
-    
-    // Add animation
-    setTimeout(() => {
-        modalContent.classList.remove('scale-90', 'opacity-0');
-        modalContent.classList.add('scale-100', 'opacity-100');
-    }, 10);
-}
-
-// Preview gambar sebelum upload
-document.getElementById('foto').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            // Jika sudah ada preview, hapus dulu
-            const existingPreview = document.querySelector('.preview-container');
-            if (existingPreview) {
-                existingPreview.remove();
+        
+        // Function to setup bahan item event listeners
+        function setupBahanItem(item) {
+            try {
+                const select = item.querySelector('.bahan-select');
+                const qtyInput = item.querySelector('.bahan-qty');
+                const satuanSpan = item.querySelector('.bahan-satuan');
+                const removeBtn = item.querySelector('.remove-bahan');
+                
+                if (!select || !qtyInput || !satuanSpan || !removeBtn) {
+                    console.warn('Missing elements in bahan item');
+                    return;
+                }
+                
+                // Update satuan when select changes
+                select.addEventListener('change', function() {
+                    try {
+                        const selectedOption = this.options[this.selectedIndex];
+                        if (selectedOption && selectedOption.value) {
+                            satuanSpan.textContent = selectedOption.dataset.satuan || '';
+                        } else {
+                            satuanSpan.textContent = '';
+                        }
+                        updateBahanInput();
+                        calculateHargaModal();
+                    } catch (error) {
+                        console.error('Error in select change handler:', error);
+                    }
+                });
+                
+                // Update bahan input when qty changes
+                qtyInput.addEventListener('input', function() {
+                    updateBahanInput();
+                    calculateHargaModal();
+                });
+                
+                // Remove bahan item
+                removeBtn.addEventListener('click', function() {
+                    item.remove();
+                    updateBahanInput();
+                    calculateHargaModal();
+                });
+            } catch (error) {
+                console.error('Error setting up bahan item:', error);
             }
-            
-            // Buat elemen preview baru
-            const previewContainer = document.createElement('div');
-            previewContainer.className = 'preview-container mt-2';
-            
-            const previewText = document.createElement('p');
-            previewText.className = 'text-sm text-gray-600 mb-1';
-            previewText.textContent = 'Preview:';
-            
-            const previewImg = document.createElement('img');
-            previewImg.src = e.target.result;
-            previewImg.className = 'w-32 h-32 object-cover rounded-md';
-            previewImg.alt = 'Preview';
-            
-            previewContainer.appendChild(previewText);
-            previewContainer.appendChild(previewImg);
-            
-            // Tambahkan ke dalam form setelah input file
-            document.getElementById('foto').parentNode.appendChild(previewContainer);
         }
-        reader.readAsDataURL(file);
+        
+        // Function to update hidden bahan input
+        function updateBahanInput() {
+            try {
+                if (!bahanInput) return;
+                
+                const bahanItems = document.querySelectorAll('.bahan-item');
+                const bahanValues = [];
+                
+                bahanItems.forEach(item => {
+                    const select = item.querySelector('.bahan-select');
+                    const qtyInput = item.querySelector('.bahan-qty');
+                    
+                    if (select && qtyInput && select.value && qtyInput.value) {
+                        const selectedOption = select.options[select.selectedIndex];
+                        if (selectedOption) {
+                            const nama = selectedOption.textContent.trim();
+                            const jumlah = qtyInput.value.trim();
+                            bahanValues.push(`${nama}:${jumlah}`);
+                        }
+                    }
+                });
+                
+                bahanInput.value = bahanValues.join(', ');
+            } catch (error) {
+                console.error('Error updating bahan input:', error);
+            }
+        }
+        
+        // Function to calculate harga modal
+        function calculateHargaModal() {
+            try {
+                if (!hargaModalInput) return;
+                
+                let totalModal = 0;
+                const bahanItems = document.querySelectorAll('.bahan-item');
+                
+                bahanItems.forEach(item => {
+                    const select = item.querySelector('.bahan-select');
+                    const qtyInput = item.querySelector('.bahan-qty');
+                    
+                    if (select && qtyInput && select.value && qtyInput.value) {
+                        const selectedOption = select.options[select.selectedIndex];
+                        if (selectedOption) {
+                            const harga = parseFloat(selectedOption.dataset.harga || 0);
+                            const jumlah = parseFloat(qtyInput.value || 0);
+                            
+                            if (!isNaN(harga) && !isNaN(jumlah)) {
+                                totalModal += harga * jumlah;
+                            }
+                        }
+                    }
+                });
+                
+                // Update harga modal input
+                hargaModalInput.value = totalModal.toFixed(0);
+                // Trigger calculation of profit
+                calculateKeuntungan();
+            } catch (error) {
+                console.error('Error calculating harga modal:', error);
+            }
+        }
+        
+        // Function to calculate keuntungan
+        function calculateKeuntungan() {
+            try {
+                if (!hargaInput || !hargaModalInput || !keuntunganInput) return;
+                
+                const hargaJual = parseFloat(hargaInput.value || 0);
+                const hargaModal = parseFloat(hargaModalInput.value || 0);
+                const keuntungan = hargaJual - hargaModal;
+                
+                keuntunganInput.value = keuntungan.toFixed(0);
+            } catch (error) {
+                console.error('Error calculating keuntungan:', error);
+            }
+        }
+        
+        // Calculate keuntungan when harga jual changes
+        if (hargaInput) {
+            hargaInput.addEventListener('input', calculateKeuntungan);
+        }
+        
+        // Initial calculations
+        if (bahanContainer && bahanInput) {
+            setTimeout(calculateHargaModal, 100); // Delay to ensure DOM is fully processed
+        }
+    } catch (error) {
+        console.error('Global error in script:', error);
     }
 });
 </script>
-
-<?php require_once 'includes/footer.php'; ?> 
+</rewritten_file>

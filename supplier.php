@@ -651,36 +651,109 @@ if (isset($_GET['action']) && $_GET['action'] === 'check_related_supplier' && is
         });
     }
 
-    function editSupplier(id, nama, alamat, kontak, bahan_baku, satuan) {
-        document.getElementById('edit_id_supplier').value = id;
-        document.getElementById('edit_nama_supplier').value = nama;
-        document.getElementById('edit_alamat').value = alamat;
-        document.getElementById('edit_kontak').value = kontak;
+    function createBahanRow(bahanValue = '', satuanValue = '', bahanName = 'bahan_baku_items[]', satuanName = 'satuan_items[]', removeFunction = 'removeBahanRow(this)') {
+        const row = document.createElement('div');
+        row.className = 'flex items-center mb-2 bahan-row';
         
-        // Parse bahan baku and satuan
-        const bahanItems = bahan_baku ? bahan_baku.split(',').map(item => item.trim()) : [];
-        const satuanItems = satuan ? satuan.split(',').map(item => item.trim()) : [];
+        row.innerHTML = `
+            <div class="flex-1 mr-2">
+                <input type="text" name="${bahanName}" value="${bahanValue}" placeholder="Nama bahan" class="shadow-sm border border-gray-300 rounded w-full py-2 px-3 text-gray-700 text-sm leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+            </div>
+            <div class="w-1/3">
+                <input type="text" name="${satuanName}" value="${satuanValue}" placeholder="Satuan" class="shadow-sm border border-gray-300 rounded w-full py-2 px-3 text-gray-700 text-sm leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+            </div>
+            <div class="ml-2">
+                <button type="button" class="text-red-500 hover:text-red-700" onclick="${removeFunction}">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
         
-        // Clear existing rows
-        const container = document.getElementById('edit_bahan_baku_container');
-        container.innerHTML = '';
-        
-        // Add rows for each bahan baku
-        if (bahanItems.length > 0) {
-            for (let i = 0; i < bahanItems.length; i++) {
-                const row = createBahanRow(bahanItems[i], satuanItems[i] || '', 'edit_bahan_baku_items[]', 'edit_satuan_items[]', 'removeEditBahanRow(this)');
-                container.appendChild(row);
-            }
-        } else {
-            // Add at least one empty row
-            const row = createBahanRow('', '', 'edit_bahan_baku_items[]', 'edit_satuan_items[]', 'removeEditBahanRow(this)');
-            container.appendChild(row);
-        }
-        
-        showModal('editSupplierModal');
+        return row;
     }
-
+    
+    function editSupplier(id) {
+        // Show loading state
+        showModal('editSupplierModal');
+        const editContainer = document.getElementById('edit_bahan_baku_container');
+        editContainer.innerHTML = '<div class="flex justify-center my-4"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div></div>';
+        
+        // Fetch supplier data
+        fetch(`ajax/get_supplier_data.php?id=${id}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Populate form fields
+                    document.getElementById('edit_id_supplier').value = data.supplier.id_supplier;
+                    document.getElementById('edit_nama_supplier').value = data.supplier.nama_supplier;
+                    document.getElementById('edit_alamat').value = data.supplier.alamat;
+                    document.getElementById('edit_kontak').value = data.supplier.kontak;
+                    
+                    // Clear container
+                    editContainer.innerHTML = '';
+                    
+                    // Parse bahan baku and satuan
+                    let bahanArray = [];
+                    let satuanArray = [];
+                    
+                    if (data.supplier.bahan_baku) {
+                        bahanArray = data.supplier.bahan_baku.split(',').map(item => item.trim());
+                    }
+                    
+                    if (data.supplier.satuan) {
+                        satuanArray = data.supplier.satuan.split(',').map(item => item.trim());
+                    }
+                    
+                    // Add rows for each bahan
+                    if (bahanArray.length > 0) {
+                        for (let i = 0; i < bahanArray.length; i++) {
+                            const bahanValue = bahanArray[i] || '';
+                            const satuanValue = satuanArray[i] || '';
+                            
+                            if (bahanValue) {
+                                const row = createBahanRow(
+                                    bahanValue, 
+                                    satuanValue, 
+                                    'edit_bahan_baku_items[]', 
+                                    'edit_satuan_items[]', 
+                                    'removeEditBahanRow(this)'
+                                );
+                                editContainer.appendChild(row);
+                            }
+                        }
+                    } else {
+                        // Add at least one empty row
+                        const row = createBahanRow(
+                            '', 
+                            '', 
+                            'edit_bahan_baku_items[]', 
+                            'edit_satuan_items[]', 
+                            'removeEditBahanRow(this)'
+                        );
+                        editContainer.appendChild(row);
+                    }
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to load supplier data'));
+                    closeModal('editSupplierModal');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching supplier data:', error);
+                alert('Failed to load supplier data. Please try again.');
+                closeModal('editSupplierModal');
+            });
+    }
+    
     function deleteSupplier(id, nama) {
+        const deleteForm = document.getElementById('delete_form');
+        const deleteButton = document.getElementById('delete_button');
+        
+        // Set the supplier ID in the form
         document.getElementById('delete_id_supplier').value = id;
         document.getElementById('delete_supplier_text').textContent = 'Memverifikasi apakah supplier dapat dihapus...';
         
@@ -692,7 +765,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'check_related_supplier' && is
         document.getElementById('force_delete_input').value = "0";
         
         // Reset button state
-        const deleteButton = document.getElementById('delete_button');
         deleteButton.textContent = "Hapus";
         deleteButton.classList.remove('bg-red-700');
         deleteButton.disabled = true;
@@ -803,27 +875,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'check_related_supplier' && is
             });
     }
     
-    function createBahanRow(bahanValue = '', satuanValue = '', bahanName = 'bahan_baku_items[]', satuanName = 'satuan_items[]', removeFunction = 'removeBahanRow(this)') {
-        const row = document.createElement('div');
-        row.className = 'flex items-center mb-2 bahan-row';
-        
-        row.innerHTML = `
-            <div class="flex-1 mr-2">
-                <input type="text" name="${bahanName}" value="${bahanValue}" placeholder="Nama bahan" class="shadow-sm border border-gray-300 rounded w-full py-2 px-3 text-gray-700 text-sm leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-            </div>
-            <div class="w-1/3">
-                <input type="text" name="${satuanName}" value="${satuanValue}" placeholder="Satuan" class="shadow-sm border border-gray-300 rounded w-full py-2 px-3 text-gray-700 text-sm leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-            </div>
-            <div class="ml-2">
-                <button type="button" class="text-red-500 hover:text-red-700" onclick="${removeFunction}">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-        `;
-        
-        return row;
-    }
-    
     function addBahanRow() {
         const container = document.getElementById('bahan_baku_container');
         const row = createBahanRow();
@@ -915,6 +966,15 @@ if (isset($_GET['action']) && $_GET['action'] === 'check_related_supplier' && is
             console.log("View-only mode active. Edit functionality disabled.");
             // You might want to remove event listeners or hide elements
         }
+        
+        // Add event listeners to edit buttons
+        const editButtons = document.querySelectorAll('.edit-supplier-btn');
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const supplierId = this.getAttribute('data-id');
+                editSupplier(supplierId);
+            });
+        });
     });
 </script>
 
