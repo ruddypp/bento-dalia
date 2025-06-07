@@ -645,20 +645,20 @@ function getDailySupplierSummary($conn, $date, $periode, $supplier_id) {
                 SUM(bm.qty_masuk) as total_qty,
                 COUNT(DISTINCT bm.id_barang) as total_jenis_barang,
                 s.nama_supplier,
-                p.periode,
-                p.status
+                bm.periode,
+                COALESCE(p.status, 'Pending') as status
               FROM 
                 barang_masuk bm
+              JOIN 
+                supplier s ON bm.id_supplier = s.id_supplier
               LEFT JOIN 
                 laporan_masuk_detail lmd ON bm.id_masuk = lmd.id_masuk
               LEFT JOIN 
                 laporan_masuk p ON lmd.id_laporan = p.id_laporan_masuk
-              LEFT JOIN
-                supplier s ON bm.id_supplier = s.id_supplier
               WHERE 
                 DATE(bm.tanggal_masuk) = ? AND bm.periode = ? AND bm.id_supplier = ?
               GROUP BY 
-                DATE(bm.tanggal_masuk), p.periode, s.id_supplier, p.status";
+                DATE(bm.tanggal_masuk), bm.periode, s.id_supplier, p.status";
                 
     $stmt = $conn->prepare($query);
     if (!$stmt) {
@@ -667,7 +667,7 @@ function getDailySupplierSummary($conn, $date, $periode, $supplier_id) {
             'total_qty' => 0,
             'total_jenis_barang' => 0,
             'nama_supplier' => 'Unknown',
-            'status' => 'pending'
+            'status' => 'Pending'
         ];
     }
     
@@ -683,7 +683,7 @@ function getDailySupplierSummary($conn, $date, $periode, $supplier_id) {
             'total_qty' => 0,
             'total_jenis_barang' => 0,
             'nama_supplier' => 'Unknown',
-            'status' => 'pending'
+            'status' => 'Pending'
         ];
     }
 }
@@ -700,9 +700,9 @@ function getDailySupplierItems($conn, $date, $periode, $supplier_id) {
                 lm.status
               FROM 
                 barang_masuk bm
-              LEFT JOIN 
+              JOIN 
                 barang b ON bm.id_barang = b.id_barang
-              LEFT JOIN 
+              JOIN 
                 supplier s ON bm.id_supplier = s.id_supplier
               LEFT JOIN
                 laporan_masuk_detail lmd ON bm.id_masuk = lmd.id_masuk
@@ -711,7 +711,7 @@ function getDailySupplierItems($conn, $date, $periode, $supplier_id) {
               WHERE 
                 DATE(bm.tanggal_masuk) = ? AND bm.periode = ? AND bm.id_supplier = ?
               GROUP BY 
-                b.id_barang, bm.lokasi
+                b.id_barang, bm.lokasi, lm.status
               ORDER BY 
                 b.nama_barang ASC";
                 

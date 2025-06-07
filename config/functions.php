@@ -997,6 +997,7 @@ function checkPermission($page) {
             'barang.php' => 'full',
             'bahan_baku.php' => 'full',
             'supplier.php' => 'view',
+            'pesan_barang.php' => 'view',
             'retur_barang.php' => 'full',
             'menu_makanan.php' => 'full',
             'menu_minuman.php' => 'full',

@@ -909,11 +909,39 @@ if (isset($_GET['action']) && $_GET['action'] === 'check_related_supplier' && is
         // Check if view-only mode is active
         const viewOnly = <?= isset($VIEW_ONLY) && $VIEW_ONLY === true ? 'true' : 'false' ?>;
         
-        // If view-only, disable certain functionality
+        // If view-only, disable edit functionality
         if (viewOnly) {
-            // For example, disable any add/edit/delete functionality
             console.log("View-only mode active. Edit functionality disabled.");
-            // You might want to remove event listeners or hide elements
+            
+            // Disable all edit buttons
+            const editButtons = document.querySelectorAll('.edit-supplier-btn');
+            editButtons.forEach(button => {
+                button.disabled = true;
+                button.classList.add('opacity-50', 'cursor-not-allowed');
+                button.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                };
+            });
+            
+            // Disable all delete buttons
+            const deleteButtons = document.querySelectorAll('.delete-supplier-btn');
+            deleteButtons.forEach(button => {
+                button.disabled = true;
+                button.classList.add('opacity-50', 'cursor-not-allowed');
+                button.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                };
+            });
+            
+            // Hide add button if it exists
+            const addButton = document.querySelector('.add-supplier-btn');
+            if (addButton) {
+                addButton.style.display = 'none';
+            }
         }
     });
 </script>

@@ -616,11 +616,38 @@ function closeModal(modalId) {
     document.getElementById(modalId).classList.add('hidden');
 }
 
+// Function to show edit modal - Fix for head produksi
+function showEditModal(id) {
+    // Here you would typically fetch the data for the specific lost item
+    // and populate the edit form
+    alert('Edit functionality for item ID: ' + id + ' is not yet implemented.');
+    // For now, we'll just show a message
+    // In a real implementation, you would:
+    // 1. Fetch the data for this ID
+    // 2. Populate a form with the data
+    // 3. Show the form in a modal
+}
+
+// Function to confirm deletion - Fix for head produksi
+function confirmDelete(id) {
+    // Use the existing deleteLostItem function
+    // Find the item name from the table
+    var row = document.querySelector('tr td:first-child:contains(' + id + ')').closest('tr');
+    var name = row ? row.querySelector('td:nth-child(3)').textContent : 'Item #' + id;
+    
+    deleteLostItem(id, name);
+}
+
 function deleteLostItem(id, name) {
     document.getElementById('id_lost_delete').value = id;
     document.getElementById('lost_item_name').textContent = name;
     showModal('deleteLostModal');
 }
+
+// Add a contains selector for jQuery
+jQuery.expr[':'].contains = function(a, i, m) {
+    return jQuery(a).text().toUpperCase().indexOf(m[3].toUpperCase()) >= 0;
+};
 </script>
 
 <?php require_once 'includes/footer.php'; ?>
