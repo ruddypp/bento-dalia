@@ -5,6 +5,12 @@ require_once 'config/database.php';
 require_once 'config/functions.php';
 require_once 'role_permission_check.php';
 
+// Force full permission for headproduksi
+if (isset($_SESSION['user_role']) && ($_SESSION['user_role'] === 'headproduksi' || $_SESSION['user_role'] === 'purchasing')) {
+    $permission = 'full';
+    $VIEW_ONLY = false;
+}
+
 // Buat direktori uploads/lost jika belum ada
 $upload_dir = 'uploads/lost';
 if (!is_dir($upload_dir)) {
@@ -320,16 +326,16 @@ if ($table_exists) {
                         </td>
                         <td class="py-2 px-3 text-sm">
                             <div class="flex space-x-2">
-                                <button class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-md" onclick="showDetailModal(<?= $item['id_lost'] ?>)">
+                                <button class="text-blue-500 hover:text-blue-700" onclick="viewLostDetail(<?= $item['id_lost'] ?>)">
                                     <i class="fas fa-eye"></i>
                                 </button>
                                 
-                                <?php if (!isset($VIEW_ONLY) || $VIEW_ONLY !== true): ?>
-                                <button class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md" onclick="showEditModal(<?= $item['id_lost'] ?>)">
+                                <?php if ($_SESSION['user_role'] === 'admin' || $_SESSION['user_role'] === 'headproduksi'): ?>
+                                <button class="text-yellow-500 hover:text-yellow-700" onclick="showEditModal(<?= $item['id_lost'] ?>, <?= $item['id_barang'] ?>, '<?= htmlspecialchars($item['nama_barang']) ?>', <?= $item['jumlah'] ?>, '<?= htmlspecialchars($item['alasan']) ?>')">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 
-                                <button class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md" onclick="confirmDelete(<?= $item['id_lost'] ?>)">
+                                <button class="text-red-500 hover:text-red-700" onclick="confirmDelete(<?= $item['id_lost'] ?>, '<?= htmlspecialchars($item['nama_barang']) ?>')">
                                 <i class="fas fa-trash"></i>
                             </button>
                                 <?php endif; ?>
@@ -458,27 +464,114 @@ if ($table_exists) {
 }
 </style>
 
-<!-- Delete Confirmation Modal -->
-<div id="deleteLostModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden overflow-y-auto">
-    <div class="relative top-10 mx-auto p-5 border w-11/12 md:w-1/3 shadow-lg rounded-md bg-white">
-        <div class="mt-3 text-center">
-            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                <i class="fas fa-exclamation-triangle text-red-600"></i>
+<!-- Delete Modal -->
+<div id="deleteLostModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Konfirmasi Hapus</h3>
+        <p id="delete_confirmation_text" class="text-gray-600 mb-6">Apakah Anda yakin ingin menghapus data ini?</p>
+        
+        <form method="POST" action="">
+            <input type="hidden" id="delete_id_lost" name="id_lost">
+            <div class="flex justify-end space-x-3">
+                <button type="button" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition-all" onclick="closeModal('deleteLostModal')">
+                    Batal
+                </button>
+                <button type="submit" name="delete_lost" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-all">
+                    Hapus
+                </button>
             </div>
-            <h3 class="text-lg font-medium text-gray-900 mt-2">Konfirmasi Hapus</h3>
-            <div class="mt-2 px-7 py-3">
-                <p class="text-sm text-gray-500">
-                    Apakah Anda yakin ingin menghapus data barang lost <span id="lost_item_name" class="font-medium"></span>?
-                </p>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Detail -->
+<div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-3xl">
+        <div class="flex justify-between items-center border-b px-4 py-3">
+            <h3 class="font-semibold text-lg">Detail Barang Lost</h3>
+            <button onclick="closeModal('detailModal')" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="detailModalContent" class="p-4">
+            <!-- Content will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editLostModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden overflow-y-auto">
+    <div class="relative top-10 mx-auto p-5 border w-11/12 md:w-2/3 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-lg font-medium text-gray-900">Edit Barang Lost</h3>
+                <button type="button" class="text-gray-400 hover:text-gray-500" onclick="closeModal('editLostModal')">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
-            <form id="deleteLostForm" method="POST" action="">
-                <input type="hidden" id="id_lost_delete" name="id_lost" value="">
-                <div class="flex justify-center mt-3 px-4 py-3">
-                    <button type="button" class="bg-gray-500 hover:bg-gray-700 text-white text-sm font-bold py-2 px-4 rounded mx-2" onclick="closeModal('deleteLostModal')">
+            
+            <form id="editLostForm" method="POST" action="" class="mt-4">
+                <input type="hidden" id="edit_id_lost" name="id_lost" value="">
+                <input type="hidden" id="edit_id_barang" name="id_barang" value="">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="edit_nama_barang">
+                        Nama Barang
+                    </label>
+                    <input type="text" id="edit_nama_barang" name="nama_barang" required 
+                           class="shadow-sm border border-gray-300 rounded w-full py-2 px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="edit_jumlah">
+                        Jumlah
+                    </label>
+                    <div class="flex">
+                        <input type="number" id="edit_jumlah" name="jumlah" required min="0.01" step="0.01"
+                               class="shadow-sm border border-gray-300 rounded-l w-full py-2 px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               placeholder="Jumlah barang">
+                        <span id="edit_satuan_input" class="inline-flex items-center px-3 text-sm rounded-r border border-l-0 border-gray-300 bg-gray-50 text-gray-500"></span>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="edit_alasan">
+                        Alasan
+                    </label>
+                    <select id="edit_alasan" name="alasan" required 
+                            class="shadow-sm border border-gray-300 rounded w-full py-2 px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Pilih Alasan</option>
+                        <option value="Rusak">Rusak</option>
+                        <option value="Kadaluarsa">Kadaluarsa</option>
+                        <option value="Hilang">Hilang</option>
+                        <option value="Tumpah">Tumpah</option>
+                        <option value="Lainnya">Lainnya</option>
+                    </select>
+                </div>
+                
+                <div class="mb-4" id="edit_alasan_lainnya_container" style="display: none;">
+                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="edit_alasan_lainnya">
+                        Alasan Lainnya
+                    </label>
+                    <textarea id="edit_alasan_lainnya" name="alasan_lainnya" rows="2"
+                           class="shadow-sm border border-gray-300 rounded w-full py-2 px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           placeholder="Masukkan alasan lainnya"></textarea>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="edit_foto_bukti">
+                        Foto Bukti (Opsional)
+                    </label>
+                    <input type="file" id="edit_foto_bukti" name="foto_bukti" accept="image/*"
+                           class="shadow-sm border border-gray-300 rounded w-full py-2 px-3 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="text-xs text-gray-500 mt-1">Format: JPG, PNG, atau JPEG. Maks: 2MB</p>
+                </div>
+                
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" class="bg-gray-500 hover:bg-gray-700 text-white text-sm font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" onclick="closeModal('editLostModal')">
                         Batal
                     </button>
-                    <button type="submit" name="delete_lost" class="bg-red-500 hover:bg-red-700 text-white text-sm font-bold py-2 px-4 rounded mx-2">
-                        Hapus
+                    <button type="submit" name="edit_lost" class="bg-blue-500 hover:bg-blue-700 text-white text-sm font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Simpan
                     </button>
                 </div>
             </form>
@@ -616,38 +709,56 @@ function closeModal(modalId) {
     document.getElementById(modalId).classList.add('hidden');
 }
 
-// Function to show edit modal - Fix for head produksi
-function showEditModal(id) {
-    // Here you would typically fetch the data for the specific lost item
-    // and populate the edit form
-    alert('Edit functionality for item ID: ' + id + ' is not yet implemented.');
-    // For now, we'll just show a message
-    // In a real implementation, you would:
-    // 1. Fetch the data for this ID
-    // 2. Populate a form with the data
-    // 3. Show the form in a modal
-}
-
-// Function to confirm deletion - Fix for head produksi
-function confirmDelete(id) {
-    // Use the existing deleteLostItem function
-    // Find the item name from the table
-    var row = document.querySelector('tr td:first-child:contains(' + id + ')').closest('tr');
-    var name = row ? row.querySelector('td:nth-child(3)').textContent : 'Item #' + id;
-    
-    deleteLostItem(id, name);
-}
-
 function deleteLostItem(id, name) {
-    document.getElementById('id_lost_delete').value = id;
-    document.getElementById('lost_item_name').textContent = name;
+    document.getElementById('delete_id_lost').value = id;
+    document.getElementById('delete_confirmation_text').textContent = `Apakah Anda yakin ingin menghapus data lost untuk ${name}?`;
     showModal('deleteLostModal');
 }
 
-// Add a contains selector for jQuery
-jQuery.expr[':'].contains = function(a, i, m) {
-    return jQuery(a).text().toUpperCase().indexOf(m[3].toUpperCase()) >= 0;
-};
+// View detail function
+function viewLostDetail(id) {
+    // Show loading
+    showModal('detailModal');
+    document.getElementById('detailModalContent').innerHTML = '<div class="flex justify-center p-4"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div></div>';
+    
+    // Fetch detail data with AJAX
+    fetch('get_lost_detail.php?id=' + id)
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('detailModalContent').innerHTML = data;
+        })
+        .catch(error => {
+            document.getElementById('detailModalContent').innerHTML = '<div class="text-red-500 p-4">Error: ' + error.message + '</div>';
+        });
+}
+
+// Show edit modal function
+function showEditModal(id, idBarang, namaBarang, jumlah, alasan) {
+    // Populate edit form
+    document.getElementById('edit_id_lost').value = id;
+    document.getElementById('edit_id_barang').value = idBarang;
+    document.getElementById('edit_nama_barang').value = namaBarang;
+    document.getElementById('edit_jumlah').value = jumlah;
+    document.getElementById('edit_alasan').value = alasan;
+    
+    // Show modal
+    showModal('editLostModal');
+}
+
+// Confirm delete function
+function confirmDelete(id, nama) {
+    document.getElementById('delete_id_lost').value = id;
+    document.getElementById('delete_confirmation_text').textContent = `Apakah Anda yakin ingin menghapus data lost untuk ${nama}?`;
+    showModal('deleteLostModal');
+}
+
+// Update nama barang ketika select berubah
+function updateBarangInfo(selectElement) {
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const namaBarang = selectedOption.text;
+    
+    document.getElementById('nama_barang_display').value = namaBarang;
+}
 </script>
 
 <?php require_once 'includes/footer.php'; ?>

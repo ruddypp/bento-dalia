@@ -674,12 +674,12 @@ function isAdmin() {
                     <td class="py-2 px-4">
                         <?php if (!isset($VIEW_ONLY) || $VIEW_ONLY !== true): ?>
                         <div class="flex items-center space-x-2">
-                            <button type="button" class="bg-yellow-500 hover:bg-yellow-600 text-white p-1 rounded-md edit-button" data-id="<?= $row['id_barang'] ?>">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                            <button type="button" class="bg-red-500 hover:bg-red-600 text-white p-1 rounded-md delete-button" data-id="<?= $row['id_barang'] ?>" data-name="<?= $row['nama_barang'] ?>">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                            <button class="text-blue-500 hover:text-blue-700 edit-button" data-id="<?= $row['id_barang'] ?>">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="text-red-500 hover:text-red-700 delete-button" data-id="<?= $row['id_barang'] ?>" data-nama="<?= htmlspecialchars($row['nama_barang']) ?>">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </div>
                         <?php else: ?>
                         <div class="text-gray-400">
@@ -1012,16 +1012,105 @@ function isAdmin() {
 </div>
 
 <script>
-    // Show modal function
+    // Document ready
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize DataTable jika ada
+        if(typeof $.fn.DataTable !== 'undefined') {
+            $('#barang-table').DataTable({
+                "order": [[ 0, "asc" ]],
+                "pageLength": 25,
+                "language": {
+                    "lengthMenu": "Tampilkan _MENU_ data per halaman",
+                    "zeroRecords": "Tidak ada data yang ditemukan",
+                    "info": "Menampilkan halaman _PAGE_ dari _PAGES_",
+                    "infoEmpty": "Tidak ada data tersedia",
+                    "infoFiltered": "(difilter dari _MAX_ total data)",
+                    "search": "Cari:",
+                    "paginate": {
+                        "first": "Pertama",
+                        "last": "Terakhir",
+                        "next": "Selanjutnya",
+                        "previous": "Sebelumnya"
+                    }
+                }
+            });
+        }
+
+        // Tambahkan event listener untuk tombol edit
+        document.querySelectorAll('.edit-button').forEach(function(button) {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                editBarang(id);
+            });
+        });
+
+        // Tambahkan event listener untuk tombol delete
+        document.querySelectorAll('.delete-button').forEach(function(button) {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const nama = this.getAttribute('data-nama');
+                deleteBarang(id, nama);
+            });
+        });
+    });
+
     function showModal(modalId) {
         document.getElementById(modalId).classList.remove('hidden');
     }
-    
-    // Close modal function
+
     function closeModal(modalId) {
         document.getElementById(modalId).classList.add('hidden');
     }
+
+    function editBarang(id) {
+        // Ambil data barang dengan AJAX
+        fetch('get_barang_data.php?id=' + id)
+            .then(response => response.json())
+            .then(data => {
+                // Isi form edit dengan data yang diambil
+                document.getElementById('edit_id_barang').value = data.id_barang;
+                document.getElementById('edit_nama_barang').value = data.nama_barang;
+                document.getElementById('edit_satuan').value = data.satuan;
+                document.getElementById('edit_harga').value = data.harga;
+                
+                // Tampilkan modal edit
+                showModal('editBarangModal');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Gagal mengambil data barang');
+            });
+    }
+
+    function deleteBarang(id, nama) {
+        // Isi konfirmasi hapus
+        document.getElementById('delete_id_barang').value = id;
+        document.getElementById('delete_confirmation_text').innerText = `Anda yakin ingin menghapus barang "${nama}"?`;
+        
+        // Tampilkan modal delete
+        showModal('deleteBarangModal');
+    }
     
+    // Show add modal when button is clicked
+    document.querySelector('[data-bs-target="#addBarangModal"]').addEventListener('click', function() {
+        showModal('addBarangModal');
+    });
+
+    // Function to update satuan based on selected bahan baku
+    function updateBahanInfo(selectElement) {
+        const selectedOption = selectElement.options[selectElement.selectedIndex];
+        const satuan = selectedOption.getAttribute('data-satuan');
+        const bahan = selectedOption.value;
+        
+        if (bahan) {
+            document.getElementById('nama_barang').value = bahan;
+        }
+        
+        if (satuan) {
+            document.getElementById('satuan').value = satuan;
+        }
+    }
+
     // Function to update fields based on selected supplier
     function updateSupplierInfo(selectElement, targetJenisId, targetSatuanId) {
         const selectedOption = selectElement.options[selectElement.selectedIndex];
@@ -1151,306 +1240,6 @@ function isAdmin() {
             document.getElementById('satuan').value = satuan;
         }
     }
-    
-    // Add event listeners for supplier dropdowns
-    document.addEventListener('DOMContentLoaded', function() {
-        const addSupplierSelect = document.getElementById('id_supplier');
-        const editSupplierSelect = document.getElementById('edit_id_supplier');
-        
-        if (addSupplierSelect) {
-            addSupplierSelect.addEventListener('change', function() {
-                updateSupplierInfo(this, 'jenis', 'satuan');
-            });
-        }
-        
-        if (editSupplierSelect) {
-            editSupplierSelect.addEventListener('change', function() {
-                updateSupplierInfo(this, 'edit_jenis', 'edit_satuan');
-            });
-        }
-    });
-    
-    // Function to load item data for editing
-    function editItem(itemId) {
-        console.log("Fetching item data for ID:", itemId);
-        
-        // Use jQuery AJAX
-        $.ajax({
-            url: 'get_barang_data.php',
-            type: 'GET',
-            data: {
-                id: itemId
-            },
-            dataType: 'json',
-            success: function(data) {
-                console.log("Received data:", data);
-                
-                if (data.success) {
-                    const item = data.item;
-                    
-                    // Fill form fields
-                    $('#edit_id_barang').val(item.id_barang);
-                    $('#edit_nama_barang').val(item.nama_barang);
-                    $('#edit_satuan').val(item.satuan);
-                    $('#edit_jenis').val(item.jenis);
-                    $('#edit_stok').val(item.stok);
-                    $('#edit_stok_minimum').val(item.stok_minimum);
-                    $('#edit_harga').val(item.harga);
-                    $('#edit_lokasi').val(item.lokasi || '');
-                    
-                    // Set supplier dropdown
-                    const supplierSelect = document.getElementById('edit_id_supplier');
-                    if (supplierSelect) {
-                        for (let i = 0; i < supplierSelect.options.length; i++) {
-                            if (supplierSelect.options[i].value == item.id_supplier) {
-                                supplierSelect.selectedIndex = i;
-                                break;
-                            }
-                        }
-                    }
-                    
-                    // Fill quick stock update form if it exists
-                    $('#quick_update_id').val(item.id_barang);
-                    $('#old_stock').val(item.stok);
-                    $('#new_stock').val(item.stok);
-                    
-                    showModal('editBarangModal');
-                } else {
-                    alert('Failed to load item data: ' + (data.message || 'Unknown error'));
-                    console.error('Error details:', data);
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('AJAX error:', status, error);
-                alert('Error loading item data: ' + error);
-            }
-        });
-    }
-    
-    // Delete item function
-    function deleteItem(id, nama) {
-        document.getElementById('delete_id_barang').value = id;
-        document.getElementById('delete_confirmation_text').innerText = 'Memverifikasi apakah barang dapat dihapus...';
-        
-        // Reset force delete checkbox
-        const forceDeleteCheckbox = document.getElementById('force_delete_checkbox');
-        if (forceDeleteCheckbox) {
-            forceDeleteCheckbox.checked = false;
-        }
-        document.getElementById('force_delete_input').value = "0";
-        
-        // Reset button state
-        const deleteButton = document.getElementById('delete_button');
-        deleteButton.textContent = "Hapus";
-        deleteButton.classList.remove('bg-red-700');
-        deleteButton.disabled = true;
-        
-        // Show modal first
-        showModal('deleteBarangModal');
-        
-        // Add a loading indicator
-        const relatedInfoEl = document.getElementById('related_info');
-        relatedInfoEl.innerHTML = '<div class="flex justify-center my-2"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div></div>';
-        
-        // Check if the item can be deleted
-        fetch(`?action=check_related&id=${id}`, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'Cache-Control': 'no-cache'
-            }
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.text(); // Get as text first to check
-            })
-            .then(text => {
-                // Try to parse as JSON, and if it fails, throw a more helpful error
-                try {
-                    return JSON.parse(text);
-                } catch (error) {
-                    console.error('Invalid JSON response:', text);
-                    throw new Error('Server returned invalid JSON: ' + error.message);
-                }
-            })
-            .then(data => {
-                console.log("Response data:", data); // Debug: log the full response
-                
-                if (data.success) {
-                    if (data.can_delete) {
-                        document.getElementById('delete_confirmation_text').innerText = `Apakah Anda yakin ingin menghapus barang "${nama}"?`;
-                        deleteButton.disabled = false;
-                        relatedInfoEl.innerHTML = '';
-                    } else {
-                        let relatedText = '<div class="text-left mt-2">';
-                        relatedText += '<p class="text-red-600 font-semibold">Barang ini tidak dapat dihapus karena masih digunakan pada:</p>';
-                        relatedText += '<ul class="list-disc ml-5 mt-1">';
-                        
-                        let totalRelated = 0;
-                        
-                        if (data.related.barang_masuk > 0) {
-                            relatedText += `<li>${data.related.barang_masuk} transaksi barang masuk</li>`;
-                            totalRelated += data.related.barang_masuk;
-                        }
-                        
-                        if (data.related.retur_barang > 0) {
-                            relatedText += `<li>${data.related.retur_barang} transaksi retur barang</li>`;
-                            totalRelated += data.related.retur_barang;
-                        }
-                        
-                        if (data.related.barang_keluar > 0) {
-                            relatedText += `<li>${data.related.barang_keluar} transaksi barang keluar</li>`;
-                            totalRelated += data.related.barang_keluar;
-                        }
-                        
-                        if (data.related.detail_terima > 0) {
-                            relatedText += `<li>${data.related.detail_terima} detail penerimaan barang</li>`;
-                            totalRelated += data.related.detail_terima;
-                        }
-                        
-                        if (data.related.stok_opname > 0) {
-                            relatedText += `<li>${data.related.stok_opname} catatan stok opname</li>`;
-                            totalRelated += data.related.stok_opname;
-                        }
-                        
-                        relatedText += '</ul>';
-                        
-                        // Add different text based on whether the user is admin
-                        const isAdmin = <?= isAdmin() ? 'true' : 'false' ?>;
-                        
-                        if (isAdmin) {
-                            relatedText += `<p class="mt-2">Sebagai administrator, Anda dapat menggunakan opsi "Hapus Paksa" di bawah untuk menghapus barang ini beserta ${totalRelated} transaksi terkait.</p>`;
-                            deleteButton.disabled = false;
-                        } else {
-                            relatedText += '<p class="mt-2">Anda perlu menghapus semua transaksi terkait terlebih dahulu sebelum dapat menghapus barang ini.</p>';
-                            deleteButton.disabled = true;
-                        }
-                        
-                        relatedText += '</div>';
-                        
-                        document.getElementById('delete_confirmation_text').innerText = `Tidak dapat menghapus barang "${nama}" secara normal.`;
-                        relatedInfoEl.innerHTML = relatedText;
-                    }
-                } else {
-                    console.error('Server error:', data); // Debug: log error details
-                    
-                    document.getElementById('delete_confirmation_text').innerText = 'Terjadi kesalahan saat memeriksa relasi barang.';
-                    
-                    let errorDetails = '';
-                    if (data.message) {
-                        errorDetails = `<p class="text-red-500">Error: ${data.message}</p>`;
-                    }
-                    
-                    relatedInfoEl.innerHTML = errorDetails;
-                    
-                    // Still allow force delete for admins if error occurs
-                    const isAdmin = <?= isAdmin() ? 'true' : 'false' ?>;
-                    if (isAdmin) {
-                        relatedInfoEl.innerHTML += '<p class="mt-2 text-left">Sebagai administrator, Anda masih dapat menggunakan opsi "Hapus Paksa" di bawah untuk mencoba menghapus barang ini.</p>';
-                        deleteButton.disabled = false;
-                    } else {
-                        deleteButton.disabled = true;
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Fetch Error:', error);
-                
-                document.getElementById('delete_confirmation_text').innerText = 'Terjadi kesalahan saat memeriksa relasi barang.';
-                relatedInfoEl.innerHTML = `<p class="text-red-500">Error koneksi: ${error.message || 'Silakan coba lagi.'}</p>`;
-                
-                // Still allow force delete for admins if error occurs
-                const isAdmin = <?= isAdmin() ? 'true' : 'false' ?>;
-                if (isAdmin) {
-                    relatedInfoEl.innerHTML += '<p class="mt-2 text-left">Sebagai administrator, Anda masih dapat menggunakan opsi "Hapus Paksa" di bawah untuk mencoba menghapus barang ini.</p>';
-                    deleteButton.disabled = false;
-                } else {
-                    deleteButton.disabled = true;
-                }
-            });
-    }
-    
-    // Show add modal when button is clicked
-    document.querySelector('[data-bs-target="#addBarangModal"]').addEventListener('click', function() {
-        showModal('addBarangModal');
-    });
-
-    // Function to update satuan based on selected bahan baku
-    function updateBahanInfo(selectElement) {
-        const selectedOption = selectElement.options[selectElement.selectedIndex];
-        const satuan = selectedOption.getAttribute('data-satuan');
-        const bahan = selectedOption.value;
-        
-        if (bahan) {
-            document.getElementById('nama_barang').value = bahan;
-        }
-        
-        if (satuan) {
-            document.getElementById('satuan').value = satuan;
-        }
-    }
-
-    $(document).ready(function() {
-        // Edit item handler
-        $(document).on('click', '.edit-item-btn', function() {
-            const itemId = $(this).data('id');
-            console.log("Edit button clicked for ID:", itemId);
-            
-            // Clear form first
-            $('#edit_id_barang').val('');
-            $('#edit_nama_barang').val('');
-            $('#edit_satuan').val('');
-            $('#edit_jenis').val('');
-            $('#edit_stok').val('');
-            $('#edit_stok_minimum').val('');
-            $('#edit_harga').val('');
-            $('#edit_lokasi').val('');
-            
-            // Show loading indicator
-            $('#editBarangModal .modal-content').append('<div class="loading-overlay"><div class="spinner"></div></div>');
-            
-            // Get item data
-            $.ajax({
-                url: 'get_barang_data.php',
-                type: 'GET',
-                data: { id: itemId },
-                dataType: 'json',
-                success: function(data) {
-                    console.log("Received data:", data);
-                    $('.loading-overlay').remove();
-                    
-                    if (data.success) {
-                        const item = data.item;
-                        
-                        // Fill form fields
-                        $('#edit_id_barang').val(item.id_barang);
-                        $('#edit_nama_barang').val(item.nama_barang);
-                        $('#edit_satuan').val(item.satuan);
-                        $('#edit_jenis').val(item.jenis);
-                        $('#edit_stok').val(item.stok);
-                        $('#edit_stok_minimum').val(item.stok_minimum);
-                        $('#edit_harga').val(item.harga);
-                        $('#edit_lokasi').val(item.lokasi || '');
-                        
-                        // Set supplier dropdown
-                        $('#edit_id_supplier').val(item.id_supplier || '');
-                        
-                        // Show modal
-                        showModal('editBarangModal');
-                    } else {
-                        alert('Failed to load item data: ' + (data.message || 'Unknown error'));
-                    }
-                },
-                error: function(xhr, status, error) {
-                    $('.loading-overlay').remove();
-                    console.error('AJAX error:', status, error);
-                    alert('Error loading item data: ' + error);
-                }
-            });
-        });
-    });
 
     // Event listener for force delete checkbox
     document.addEventListener('DOMContentLoaded', function() {
@@ -1494,15 +1283,6 @@ function isAdmin() {
                 return true;
             });
         }
-        
-        // For edit buttons
-        const editButtons = document.querySelectorAll('.edit-item-btn');
-        editButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const itemId = this.getAttribute('data-id');
-                editItem(itemId);
-            });
-        });
     });
 
     function deleteItemConfirmed() {

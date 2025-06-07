@@ -1008,6 +1008,19 @@ function checkPermission($page) {
             'profile.php' => 'full',
             'detail_penjualan.php' => 'full'
         ],
+        'crew' => [
+            'barang.php' => 'full',
+            'bahan_baku.php' => 'full',
+            'supplier.php' => 'view',
+            'pesan_barang.php' => 'view',
+            'retur_barang.php' => 'view',
+            'penjualan.php' => 'full',
+            'laporan_penjualan.php' => 'full',
+            'laporan_masuk.php' => 'full',
+            'index.php' => 'full',
+            'profile.php' => 'full',
+            'detail_penjualan.php' => 'full'
+        ],
         'headproduksi' => [
             'barang.php' => 'full',
             'bahan_baku.php' => 'view',

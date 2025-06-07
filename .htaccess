@@ -1,0 +1,12 @@
+# Ensure PHP files are properly handled
+AddType application/x-httpd-php .php
+
+# Set default index file
+DirectoryIndex index.php index.html
+
+# Enable PHP error reporting
+php_flag display_errors on
+php_value error_reporting E_ALL
+
+# Prevent directory listing
+Options -Indexes 
