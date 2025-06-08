@@ -677,9 +677,11 @@ function isAdmin() {
                             <button class="text-blue-500 hover:text-blue-700 edit-button" data-id="<?= $row['id_barang'] ?>">
                                 <i class="fas fa-edit"></i>
                             </button>
+                            <?php if ($_SESSION['user_role'] !== 'kasir' && $_SESSION['user_role'] !== 'crew'): ?>
                             <button class="text-red-500 hover:text-red-700 delete-button" data-id="<?= $row['id_barang'] ?>" data-nama="<?= htmlspecialchars($row['nama_barang']) ?>">
                                 <i class="fas fa-trash"></i>
                             </button>
+                            <?php endif; ?>
                         </div>
                         <?php else: ?>
                         <div class="text-gray-400">
@@ -1071,14 +1073,40 @@ function isAdmin() {
                 document.getElementById('edit_id_barang').value = data.id_barang;
                 document.getElementById('edit_nama_barang').value = data.nama_barang;
                 document.getElementById('edit_satuan').value = data.satuan;
-                document.getElementById('edit_harga').value = data.harga;
+                document.getElementById('edit_jenis').value = data.jenis || '';
+                document.getElementById('edit_stok').value = data.stok || 0;
+                document.getElementById('edit_stok_minimum').value = data.stok_minimum || 0;
+                document.getElementById('edit_harga').value = data.harga || 0;
+                
+                // Set supplier if exists
+                if (data.id_supplier) {
+                    document.getElementById('edit_id_supplier').value = data.id_supplier;
+                }
+                
+                // Set lokasi if exists
+                if (data.lokasi) {
+                    const lokasiSelect = document.getElementById('edit_lokasi');
+                    for (let i = 0; i < lokasiSelect.options.length; i++) {
+                        if (lokasiSelect.options[i].value === data.lokasi) {
+                            lokasiSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+                
+                // For quick stock update form (admin only)
+                if (document.getElementById('quick_update_id')) {
+                    document.getElementById('quick_update_id').value = data.id_barang;
+                    document.getElementById('old_stock').value = data.stok || 0;
+                    document.getElementById('new_stock').value = data.stok || 0;
+                }
                 
                 // Tampilkan modal edit
                 showModal('editBarangModal');
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Gagal mengambil data barang');
+                alert('Gagal mengambil data barang: ' + error.message);
             });
     }
 

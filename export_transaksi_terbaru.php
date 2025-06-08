@@ -46,7 +46,7 @@ try {
     // Recent transactions query
     $query_transactions = "SELECT p.*, 
                         COUNT(pd.id_penjualan_detail) as total_items,
-                        u.nama as nama_kasir
+                        u.nama_lengkap as nama_kasir
                     FROM penjualan p 
                     LEFT JOIN penjualan_detail pd ON p.id_penjualan = pd.id_penjualan 
                     LEFT JOIN users u ON p.id_user = u.id_user

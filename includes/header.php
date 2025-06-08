@@ -229,7 +229,7 @@ $store_info = getStoreInfo();
                                 </a>
                             </li>
                             
-                            <?php if ($user_role == 'admin' || in_array($user_role, ['purchasing', 'crew'])): ?>
+                            <?php if ($user_role == 'admin' || in_array($user_role, ['purchasing', 'crew', 'kasir'])): ?>
                             <li>
                                 <a href="pesan_barang.php" class="flex items-center block py-2 px-3 rounded-lg transition duration-200 hover:bg-blue-600 <?= basename($_SERVER['PHP_SELF']) == 'pesan_barang.php' ? 'bg-blue-700' : '' ?>">
                                     <i class="fas fa-shopping-basket w-5 text-sm"></i>

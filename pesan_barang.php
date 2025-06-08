@@ -278,7 +278,7 @@ $total_pages = ceil($total_records / $records_per_page);
             <i class="fas fa-shopping-cart text-blue-500 mr-2"></i> Daftar Pesanan Barang
         </h2>
         
-        <?php if (!isset($VIEW_ONLY) || $VIEW_ONLY !== true): ?>
+        <?php if ((!isset($VIEW_ONLY) || $VIEW_ONLY !== true) && $_SESSION['user_role'] !== 'kasir'): ?>
         <button type="button" class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-4 py-2 rounded-md transition-all" onclick="showModal('addPesananModal')">
             <i class="fas fa-plus-circle mr-2"></i> Tambah Pesanan
         </button>
@@ -363,10 +363,10 @@ $total_pages = ceil($total_records / $records_per_page);
                     <td class="py-2 px-4">
                         <div class="flex space-x-2">
                             <button type="button" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-md" onclick="viewPesanan(<?= $pesanan['id_pesanan'] ?>)">
-                            <i class="fas fa-eye"></i>
-                        </button>
+                                <i class="fas fa-eye"></i>
+                            </button>
                             
-                            <?php if (!isset($VIEW_ONLY) || $VIEW_ONLY !== true): ?>
+                            <?php if ((!isset($VIEW_ONLY) || $VIEW_ONLY !== true) && $_SESSION['user_role'] !== 'kasir'): ?>
                             <button type="button" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md" onclick="showEditModal(<?= $pesanan['id_pesanan'] ?>)">
                                 <i class="fas fa-edit"></i>
                             </button>
@@ -1295,6 +1295,12 @@ $total_pages = ceil($total_records / $records_per_page);
         showModal('cancelPesananModal');
     }
     
+    // Add the missing confirmDelete function that redirects to cancelPesanan
+    function confirmDelete(id) {
+        // Redirect to cancelPesanan function since that's the intended behavior
+        cancelPesanan(id);
+    }
+    
     function changePerPage(perPage) {
         window.location.href = "?page=1&per_page=" + perPage;
     }
@@ -1344,6 +1350,56 @@ $total_pages = ceil($total_records / $records_per_page);
                 }
             });
         });
+    }
+
+    // Function to show edit modal
+    function showEditModal(id) {
+        // Show loading in the modal
+        showModal('viewPesananModal');
+        document.getElementById('pesanan-detail-content').innerHTML = '<div class="flex justify-center"><div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>';
+        
+        // Fetch pesanan details via AJAX
+        fetch('ajax_get_pesanan.php?id=' + id)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Display pesanan details in the modal
+                    viewPesanan(id);
+                } else {
+                    // Show error message
+                    document.getElementById('pesanan-detail-content').innerHTML = `
+                        <div class="p-4 bg-red-50 rounded-lg">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-circle text-red-500 text-xl"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-red-800">Gagal memuat detail pesanan</h3>
+                                    <div class="mt-2 text-sm text-red-700">
+                                        <p>${data.message || 'Terjadi kesalahan saat memuat data pesanan.'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching pesanan details:', error);
+                document.getElementById('pesanan-detail-content').innerHTML = `
+                    <div class="p-4 bg-red-50 rounded-lg">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-circle text-red-500 text-xl"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-red-800">Gagal memuat detail pesanan</h3>
+                                <div class="mt-2 text-sm text-red-700">
+                                    <p>${error.message || 'Terjadi kesalahan saat memuat data pesanan.'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            });
     }
 </script>
 

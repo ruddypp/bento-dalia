@@ -330,14 +330,14 @@ if ($table_exists) {
                                     <i class="fas fa-eye"></i>
                                 </button>
                                 
-                                <?php if ($_SESSION['user_role'] === 'admin' || $_SESSION['user_role'] === 'headproduksi'): ?>
                                 <button class="text-yellow-500 hover:text-yellow-700" onclick="showEditModal(<?= $item['id_lost'] ?>, <?= $item['id_barang'] ?>, '<?= htmlspecialchars($item['nama_barang']) ?>', <?= $item['jumlah'] ?>, '<?= htmlspecialchars($item['alasan']) ?>')">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 
+                                <?php if ($_SESSION['user_role'] === 'admin'): ?>
                                 <button class="text-red-500 hover:text-red-700" onclick="confirmDelete(<?= $item['id_lost'] ?>, '<?= htmlspecialchars($item['nama_barang']) ?>')">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                                    <i class="fas fa-trash"></i>
+                                </button>
                                 <?php endif; ?>
                             </div>
                         </td>

@@ -100,6 +100,17 @@ if (isset($_GET['edit']) && !empty($_GET['edit'])) {
 
 // Handle form submission for edit
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_laporan'])) {
+    // Check if user has permission to edit
+    if ($_SESSION['user_role'] === 'crew') {
+        // Redirect with error message
+        $_SESSION['alert'] = [
+            'type' => 'danger',
+            'message' => 'Anda tidak memiliki akses untuk mengubah laporan'
+        ];
+        header('Location: laporan_masuk.php');
+        exit;
+    }
+    
     $id_laporan = $_POST['id_laporan'] ?? '';
     $tanggal_laporan = $_POST['tanggal_laporan'] ?? date('Y-m-d');
     $id_masuk = $_POST['id_masuk'] ?? '';
@@ -230,6 +241,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_laporan'])) {
 
 // Handle new report form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['buat_laporan'])) {
+    // Check if user has permission to add new reports
+    if ($_SESSION['user_role'] === 'crew') {
+        // Redirect with error message
+        $_SESSION['alert'] = [
+            'type' => 'danger',
+            'message' => 'Anda tidak memiliki akses untuk menambah laporan'
+        ];
+        header('Location: laporan_masuk.php');
+        exit;
+    }
+    
     // Validate form data
     $tanggal_laporan = $_POST['tanggal_laporan'] ?? date('Y-m-d');
     $nama_barang = $_POST['nama_barang'] ?? '';
@@ -754,9 +776,11 @@ function getDailySupplierItems($conn, $date, $periode, $supplier_id) {
         </nav>
         
         <div class="flex space-x-2">
+            <?php if ($_SESSION['user_role'] !== 'crew'): ?>
             <a href="laporan_barang_masuk.php" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg shadow-md transition duration-200 flex items-center">
                 <i class="fas fa-plus mr-2"></i> Buat Laporan Baru
             </a>
+            <?php endif; ?>
             
             <button id="printAllBtn" onclick="printAllReports()" class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg shadow-md transition duration-200 flex items-center">
                 <i class="fas fa-print mr-2"></i> Cetak Semua
@@ -766,6 +790,7 @@ function getDailySupplierItems($conn, $date, $periode, $supplier_id) {
     
     <!-- New Report Form (Initially Hidden) -->
     <div id="addReportForm" class="bg-white rounded-lg shadow-md overflow-hidden mb-6" style="display: <?= ($edit_mode || !empty($errors)) ? 'block' : 'none' ?>;">
+        <?php if ($_SESSION['user_role'] !== 'crew'): ?>
         <div class="bg-gray-50 py-3 px-4 border-b border-gray-200">
             <h3 class="text-lg font-semibold text-gray-700">
                 <?= $edit_mode ? 'Edit Laporan Barang Masuk' : 'Form Laporan Barang Masuk Baru' ?>
@@ -883,6 +908,23 @@ function getDailySupplierItems($conn, $date, $periode, $supplier_id) {
                 </div>
             </form>
         </div>
+        <?php else: ?>
+        <div class="bg-gray-50 py-3 px-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-700">Akses Terbatas</h3>
+        </div>
+        <div class="p-4">
+            <div class="bg-yellow-100 border-yellow-500 text-yellow-700 border-l-4 p-4 mb-4 rounded-md">
+                <div class="flex items-center">
+                    <div class="py-1">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                    </div>
+                    <div>
+                        <p class="font-medium">Anda tidak memiliki akses untuk menambah atau mengubah laporan.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
     </div>
     
     <?php if (isset($_SESSION['alert'])): ?>
