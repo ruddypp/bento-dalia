@@ -79,6 +79,23 @@ $store_info = mysqli_fetch_assoc($result);
         .header-gradient {
             background: linear-gradient(to right,rgb(72, 161, 105),rgb(27, 150, 72));
         }
+        
+        /* Responsive login form */
+        @media (max-width: 640px) {
+            .max-w-md {
+                max-width: 90%;
+                width: 100%;
+            }
+            
+            input[type="text"],
+            input[type="password"] {
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+            
+            .p-8 {
+                padding: 1.5rem;
+            }
+        }
     </style>
 </head>
 <body class="bg-primary-100 min-h-screen flex items-center justify-center p-4">

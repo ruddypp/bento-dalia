@@ -74,6 +74,114 @@ $store_info = getStoreInfo();
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/responsive.css">
+    <link rel="stylesheet" href="assets/css/modal-responsive.css">
+    <link rel="stylesheet" href="assets/css/modal-desktop-fixes.css">
+    <!-- Tailwind modal fixes will be compiled by Tailwind JIT -->
+    <style>
+        /* Modal and form fixes for better responsiveness */
+        .modal-body {
+            max-height: calc(90vh - 120px);
+            overflow-y: auto;
+        }
+        
+        .modal-content {
+            max-height: 90vh;
+        }
+        
+        .modal-dialog {
+            margin: 1.75rem auto;
+            max-width: 95%;
+        }
+        
+        @media (max-width: 767px) {
+            .modal-dialog {
+                margin: 0.5rem;
+                max-width: calc(100% - 1rem);
+            }
+            
+            .form-group {
+                margin-bottom: 0.75rem;
+            }
+            
+            .modal-body {
+                padding: 0.75rem;
+            }
+            
+            .modal-header, .modal-footer {
+                padding: 0.75rem;
+            }
+        }
+        
+        @media (min-width: 992px) {
+            .modal-dialog {
+                max-width: 500px;
+                margin: 1.75rem auto;
+            }
+            
+            .modal-lg .modal-dialog {
+                max-width: 800px;
+            }
+            
+            .modal-xl .modal-dialog {
+                max-width: 1140px;
+            }
+            
+            /* Desktop precise modal positioning */
+            .modal-content {
+                border: 1px solid rgba(0, 0, 0, 0.2);
+                border-radius: 0.3rem;
+                box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            }
+            
+            /* Prevent form field overflow */
+            .modal-body .form-control,
+            .modal-body input,
+            .modal-body select,
+            .modal-body textarea {
+                max-width: 100%;
+                width: 100%;
+            }
+            
+            /* Better table display in modals */
+            .modal-body .table-responsive {
+                max-height: calc(90vh - 200px);
+                overflow-y: auto;
+            }
+            
+            /* Fix for Select2 in modals */
+            .select2-container--open .select2-dropdown {
+                z-index: 1056 !important;
+            }
+            
+            /* Ensure form rows don't overflow */
+            .form-row {
+                display: flex;
+                flex-wrap: wrap;
+                margin-right: -5px;
+                margin-left: -5px;
+            }
+            
+            /* Ensure form columns are properly sized */
+            .form-row > [class*="col-"] {
+                padding-right: 5px;
+                padding-left: 5px;
+            }
+        }
+        
+        /* Form fixes */
+        select, input, textarea {
+            max-width: 100%;
+        }
+        
+        .select2-container {
+            width: 100% !important;
+        }
+        
+        /* Table in modal fixes */
+        .modal-body .table-responsive {
+            overflow-x: auto;
+        }
+    </style>
     
     <!-- Critical hamburger menu fix -->
     <style>
@@ -452,7 +560,7 @@ $store_info = getStoreInfo();
         </div>
         
         <!-- Content -->
-        <div id="content" class="content flex-1 pl-0 lg:pl-64 transition-all duration-300">
+        <div id="content" class="content flex-1 pl-0 lg:pl-64 transition-all duration-300" style="max-width: 100%; overflow-x: hidden;">
             <div class="sticky top-0 z-40 bg-white shadow-sm">
                 <div class="flex justify-between items-center px-4 lg:px-6 py-2.5">
                     <h1 class="text-xl font-bold text-gray-800"><?= isset($pageTitle) ? $pageTitle : 'Dashboard' ?></h1>
@@ -487,7 +595,7 @@ $store_info = getStoreInfo();
                 </div>
             </div>
             
-            <div class="p-6">
+            <div class="p-6" style="max-width: 100%; overflow-x: hidden;">
                 <?php displayAlert(); ?>
                 <?php if(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'crew'): ?>
                 <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4" role="alert">

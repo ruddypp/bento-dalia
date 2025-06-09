@@ -156,4 +156,54 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus, input[type="
         border: 1px solid #ddd;
         padding: 8px;
     }
+}
+
+/* Perbaikan scroll horizontal di seluruh aplikasi */
+html, body {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+}
+
+.container, 
+.container-fluid {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* Perbaikan untuk wrapper tabel */
+.overflow-x-auto {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+/* Perbaikan untuk konten utama */
+#content {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* Responsivitas tabel */
+.table-responsive {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Semua tabel */
+table {
+    width: 100%;
+}
+
+/* Responsivitas pada container card */
+.bg-white.shadow-md.rounded-lg {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* Perbaikan untuk modal */
+.fixed.inset-0 {
+    overflow-x: hidden;
 } 

@@ -1625,12 +1625,40 @@ for ($i = 1; $i <= 4; $i++) {
 <script>
     // Show modal function
     function showModal(modalId) {
-        document.getElementById(modalId).classList.remove('hidden');
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        
+        // Tampilkan modal
+        modal.classList.remove('hidden');
+        
+        // Atur posisi di tengah
+        modal.style.display = 'flex';
+        modal.style.alignItems = 'center';
+        modal.style.justifyContent = 'center';
+        
+        // Atur posisi konten modal
+        const modalContent = modal.querySelector('.relative.top-20');
+        if (modalContent) {
+            modalContent.style.margin = '0 auto';
+            modalContent.style.top = '0';
+            
+            // Untuk modal besar, pastikan ukurannya sesuai
+            if (modalId === 'addBahanBakuModal' || 
+                modalId === 'editBahanBakuModal' || 
+                modalId === 'viewBahanBakuModal') {
+                modalContent.style.width = '800px';
+                modalContent.style.maxWidth = '90%';
+            }
+        }
     }
     
     // Close modal function
     function closeModal(modalId) {
-        document.getElementById(modalId).classList.add('hidden');
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
     }
     
     // Delete bahan baku function
@@ -2238,4 +2266,400 @@ for ($i = 1; $i <= 4; $i++) {
 </style>
 
 <?php require_once 'includes/footer.php'; ?> 
+
+<!-- CSS khusus untuk perbaikan modal pada halaman bahan baku -->
+<style>
+    /* Perbaikan khusus untuk modal pada halaman bahan baku */
+    @media (min-width: 992px) {
+        /* Mencegah scroll horizontal */
+        body, html {
+            overflow-x: hidden !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        
+        /* Container utama */
+        .container, .container-fluid {
+            max-width: 100% !important;
+            padding-left: 15px !important;
+            padding-right: 15px !important;
+            overflow-x: hidden !important;
+        }
+        
+        /* Posisi modal di tengah layar */
+        #addBahanBakuModal,
+        #editBahanBakuModal,
+        #viewBahanBakuModal,
+        #returBahanBakuModal,
+        #deleteBahanBakuModal {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        
+        #addBahanBakuModal.hidden,
+        #editBahanBakuModal.hidden,
+        #viewBahanBakuModal.hidden,
+        #returBahanBakuModal.hidden,
+        #deleteBahanBakuModal.hidden {
+            display: none !important;
+        }
+        
+        /* Perbaikan posisi modal */
+        #addBahanBakuModal .relative.top-20,
+        #editBahanBakuModal .relative.top-20,
+        #viewBahanBakuModal .relative.top-20,
+        #returBahanBakuModal .relative.top-20,
+        #deleteBahanBakuModal .relative.top-20 {
+            margin: 0 auto !important;
+            top: 0 !important;
+            width: 800px !important;
+            max-width: 90% !important;
+            position: relative !important;
+            transform: none !important;
+            left: 0 !important;
+        }
+        
+        /* Konten modal */
+        #addBahanBakuModal .mt-3,
+        #editBahanBakuModal .mt-3,
+        #viewBahanBakuModal .mt-3,
+        #returBahanBakuModal .mt-3,
+        #deleteBahanBakuModal .mt-3 {
+            max-height: calc(90vh - 4rem) !important;
+            overflow-y: auto !important;
+        }
+        
+        /* Tabel dalam modal */
+        #bahan-baku-items-body td {
+            padding: 0.5rem !important;
+            vertical-align: middle !important;
+        }
+        
+        /* Input dalam modal */
+        #addBahanBakuModal input,
+        #addBahanBakuModal select,
+        #editBahanBakuModal input,
+        #editBahanBakuModal select {
+            height: calc(1.5em + 0.75rem + 2px) !important;
+            font-size: 0.875rem !important;
+            padding: 0.25rem 0.5rem !important;
+        }
+        
+        /* Dropdown select */
+        .barang-select {
+            min-width: 200px !important;
+        }
+        
+        /* Wrapper tabel */
+        .overflow-x-auto {
+            max-width: 100% !important;
+            overflow-x: auto !important;
+        }
+        
+        /* Ukuran kolom dalam tabel bahan baku */
+        #addBahanBakuModal th:nth-child(1),
+        #addBahanBakuModal td:nth-child(1) {
+            width: 30% !important;
+        }
+        
+        #addBahanBakuModal th:nth-child(2),
+        #addBahanBakuModal td:nth-child(2) {
+            width: 10% !important;
+        }
+        
+        #addBahanBakuModal th:nth-child(3),
+        #addBahanBakuModal td:nth-child(3) {
+            width: 12% !important;
+        }
+        
+        #addBahanBakuModal th:nth-child(4),
+        #addBahanBakuModal td:nth-child(4) {
+            width: 15% !important;
+        }
+        
+        #addBahanBakuModal th:nth-child(5),
+        #addBahanBakuModal td:nth-child(5) {
+            width: 12% !important;
+        }
+        
+        #addBahanBakuModal th:nth-child(6),
+        #addBahanBakuModal td:nth-child(6) {
+            width: 12% !important;
+        }
+        
+        #addBahanBakuModal th:nth-child(7),
+        #addBahanBakuModal td:nth-child(7) {
+            width: 9% !important;
+        }
+    }
+    
+    /* Fix scroll horizontal pada tabel utama */
+    .bg-white.shadow-md.rounded-lg.overflow-hidden {
+        overflow-x: hidden !important;
+    }
+    
+    .bg-white.shadow-md.rounded-lg.overflow-hidden .overflow-x-auto {
+        max-width: 100% !important;
+        overflow-x: auto !important;
+    }
+    
+    /* Perbaikan lebar modal pada semua ukuran layar */
+    .fixed.inset-0.bg-gray-600.bg-opacity-50.hidden.overflow-y-auto.h-full.w-full {
+        overflow-x: hidden !important;
+    }
+    
+    /* Override tampilan modal agar berada di tengah */
+    .fixed.inset-0.bg-gray-600.bg-opacity-50:not(.hidden) {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+</style>
+
+<!-- Script khusus untuk perbaikan modal pada halaman bahan baku -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inisialisasi Select2 untuk modal
+        function initSelect2InModal(modalId) {
+            if (typeof jQuery === 'undefined' || typeof jQuery.fn.select2 === 'undefined') return;
+            
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+            
+            // Perbaiki semua select dalam modal
+            const selects = modal.querySelectorAll('select');
+            selects.forEach(select => {
+                const $select = jQuery(select);
+                
+                // Destroy jika sudah ada select2
+                if ($select.hasClass('select2-hidden-accessible')) {
+                    $select.select2('destroy');
+                }
+                
+                // Inisialisasi select2 dengan opsi yang tepat
+                $select.select2({
+                    width: '100%',
+                    dropdownParent: jQuery(modal),
+                    dropdownAutoWidth: true
+                });
+                
+                // Perbaiki lebar container
+                setTimeout(() => {
+                    const container = $select.next('.select2-container');
+                    if (container.length) {
+                        container.css('width', '100%');
+                    }
+                }, 50);
+            });
+        }
+        
+        // Fungsi untuk memperbaiki modal bahan baku khusus untuk desktop
+        function fixBahanBakuModal() {
+            // Hanya untuk desktop
+            if (window.innerWidth < 992) return;
+            
+            // Modal IDs untuk iterasi
+            const modalIds = [
+                'addBahanBakuModal', 
+                'editBahanBakuModal', 
+                'viewBahanBakuModal', 
+                'returBahanBakuModal',
+                'deleteBahanBakuModal'
+            ];
+            
+            // Perbaiki semua modal
+            modalIds.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (!modal) return;
+                
+                // Ubah tampilan modal menjadi flex untuk centering
+                modal.style.display = modal.classList.contains('hidden') ? 'none' : 'flex';
+                modal.style.alignItems = 'center';
+                modal.style.justifyContent = 'center';
+                
+                // Perbaiki konten modal
+                const modalContent = modal.querySelector('.relative');
+                if (modalContent) {
+                    // Force styles dengan !important
+                    modalContent.style.setProperty('width', '800px', 'important');
+                    modalContent.style.setProperty('max-width', '90%', 'important');
+                    modalContent.style.setProperty('top', '0', 'important');
+                    modalContent.style.setProperty('margin', '0 auto', 'important');
+                    modalContent.style.setProperty('position', 'relative', 'important');
+                    modalContent.style.setProperty('transform', 'none', 'important');
+                    modalContent.style.setProperty('left', '0', 'important');
+                    
+                    // Perbaiki body modal
+                    const modalBody = modalContent.querySelector('.mt-3, .modal-body');
+                    if (modalBody) {
+                        // Hitung tinggi viewport
+                        const viewportHeight = window.innerHeight;
+                        // Maksimal 85% dari tinggi viewport
+                        const maxHeight = Math.floor(viewportHeight * 0.85);
+                        
+                        // Dapatkan tinggi header jika ada
+                        const modalHeader = modalContent.querySelector('.flex.justify-between.items-center, .modal-header');
+                        const headerHeight = modalHeader ? modalHeader.offsetHeight : 0;
+                        
+                        // Set tinggi max body (viewport - header - margin)
+                        const maxBodyHeight = maxHeight - headerHeight - 64;
+                        
+                        modalBody.style.setProperty('max-height', `${maxBodyHeight}px`, 'important');
+                        modalBody.style.setProperty('overflow-y', 'auto', 'important');
+                    }
+                }
+            });
+            
+            // Perbaikan untuk tabel dalam modal addBahanBakuModal
+            const addBahanBakuModal = document.getElementById('addBahanBakuModal');
+            if (addBahanBakuModal) {
+                // Perbaiki tabel
+                const tables = addBahanBakuModal.querySelectorAll('table');
+                tables.forEach(table => {
+                    table.style.setProperty('width', '100%', 'important');
+                    table.style.setProperty('table-layout', 'fixed', 'important');
+                    
+                    // Perbaiki header tabel
+                    const headerCells = table.querySelectorAll('th');
+                    if (headerCells.length > 0) {
+                        // Sesuaikan lebar kolom berdasarkan konten
+                        headerCells.forEach((cell, index) => {
+                            // Lebar khusus berdasarkan indeks kolom
+                            if (index === 0) { // Kolom barang
+                                cell.style.width = '30%';
+                            } else if (index === 5) { // Kolom total
+                                cell.style.width = '15%';
+                            } else if (index === 6) { // Kolom aksi
+                                cell.style.width = '10%';
+                            } else { // Kolom lainnya
+                                cell.style.width = '11.25%';
+                            }
+                        });
+                    }
+                    
+                    // Perbaiki cell tabel
+                    const cells = table.querySelectorAll('td');
+                    cells.forEach(cell => {
+                        cell.style.setProperty('padding', '0.5rem', 'important');
+                        cell.style.setProperty('vertical-align', 'middle', 'important');
+                    });
+                });
+                
+                // Perbaiki select2 jika ada
+                if (typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
+                    // Force refresh select2
+                    setTimeout(() => {
+                        jQuery(addBahanBakuModal).find('.select2-container').css('width', '100%');
+                    }, 100);
+                }
+            }
+            
+            // Perbaiki scroll horizontal pada halaman
+            document.body.style.overflowX = 'hidden';
+            
+            // Semua container
+            const containers = document.querySelectorAll('.container, .container-fluid');
+            containers.forEach(container => {
+                container.style.maxWidth = '100%';
+                container.style.overflowX = 'hidden';
+            });
+            
+            // Wrapper tabel
+            const tableWrappers = document.querySelectorAll('.overflow-x-auto');
+            tableWrappers.forEach(wrapper => {
+                wrapper.style.maxWidth = '100%';
+            });
+        }
+        
+        // Override fungsi showModal untuk posisi di tengah
+        const originalShowModal = window.showModal;
+        window.showModal = function(modalId) {
+            // Panggil fungsi asli
+            originalShowModal(modalId);
+            
+            // Dapatkan elemen modal
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+            
+            // Ubah tampilan modal
+            modal.style.display = 'flex';
+            modal.style.alignItems = 'center';
+            modal.style.justifyContent = 'center';
+            
+            // Perbaiki posisi konten modal
+            const modalContent = modal.querySelector('.relative');
+            if (modalContent) {
+                modalContent.style.margin = '0 auto';
+                modalContent.style.top = '0';
+                modalContent.style.transform = 'none';
+                modalContent.style.left = '0';
+            }
+            
+            // Jalankan perbaikan lengkap
+            setTimeout(() => {
+                fixBahanBakuModal();
+                initSelect2InModal(modalId);
+            }, 10);
+        };
+        
+        // Override fungsi closeModal
+        const originalCloseModal = window.closeModal;
+        window.closeModal = function(modalId) {
+            originalCloseModal(modalId);
+        };
+        
+        // Jalankan perbaikan saat halaman dimuat
+        fixBahanBakuModal();
+        
+        // Saat resize jendela
+        window.addEventListener('resize', fixBahanBakuModal);
+    });
+</script>
+
+<!-- Fix modal centering dengan CSS inline langsung -->
+<script>
+    // Tunggu dokumen selesai loading
+    document.addEventListener('DOMContentLoaded', function() {
+        // Dapatkan semua elemen modal
+        const modals = document.querySelectorAll('.fixed.inset-0.bg-gray-600.bg-opacity-50');
+        
+        // Terapkan style secara langsung ke setiap modal
+        modals.forEach(modal => {
+            // Tambahkan event listener untuk mengatur tampilan
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.attributeName === 'class') {
+                        if (!modal.classList.contains('hidden')) {
+                            // Modal ditampilkan - atur posisi tengah
+                            modal.style.display = 'flex';
+                            modal.style.alignItems = 'center';
+                            modal.style.justifyContent = 'center';
+                            
+                            // Atur konten modal
+                            const modalContent = modal.querySelector('.relative.top-20');
+                            if (modalContent) {
+                                modalContent.style.marginTop = '0';
+                                modalContent.style.top = '0';
+                            }
+                        } else {
+                            // Modal disembunyikan
+                            modal.style.display = 'none';
+                        }
+                    }
+                });
+            });
+            
+            // Mulai observasi
+            observer.observe(modal, { attributes: true });
+            
+            // Atur style awal
+            if (!modal.classList.contains('hidden')) {
+                modal.style.display = 'flex';
+                modal.style.alignItems = 'center';
+                modal.style.justifyContent = 'center';
+            }
+        });
+    });
+</script>
 

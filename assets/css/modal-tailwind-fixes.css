@@ -1,0 +1,243 @@
+/* 
+ * Tailwind CSS Modal & Form Fixes
+ * Untuk memperbaiki tampilan modal dan form yang menggunakan Tailwind CSS
+ */
+
+/* === Modal Fixes === */
+.modal {
+  @apply fixed inset-0 z-50 overflow-y-auto;
+}
+
+.modal-dialog {
+  @apply relative w-full max-w-md mx-auto my-8;
+}
+
+@media (max-width: 640px) {
+  .modal-dialog {
+    @apply my-4 mx-4;
+  }
+}
+
+.modal-content {
+  @apply relative flex flex-col w-full bg-white rounded-lg shadow-xl;
+  max-height: 90vh;
+}
+
+.modal-header {
+  @apply flex items-start justify-between p-4 border-b border-gray-200 rounded-t-lg;
+}
+
+.modal-body {
+  @apply relative flex-auto p-4 overflow-y-auto;
+  max-height: calc(90vh - 8rem);
+}
+
+.modal-footer {
+  @apply flex flex-wrap items-center justify-end p-3 border-t border-gray-200 rounded-b-lg;
+}
+
+/* === Form Fixes === */
+.form-group {
+  @apply mb-4;
+}
+
+.form-label {
+  @apply block mb-2 text-sm font-medium text-gray-700;
+}
+
+.form-control {
+  @apply block w-full px-3 py-2 text-base border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500;
+}
+
+/* Select2 Tailwind fixes */
+.select2-container--default .select2-selection--single {
+  @apply block w-full px-3 py-2 text-base border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500;
+  height: 42px !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+  @apply text-base text-gray-700;
+  line-height: 28px !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 40px !important;
+}
+
+/* === Responsive Fixes === */
+
+/* Small screens */
+@media (max-width: 640px) {
+  .modal-body {
+    @apply p-3;
+    max-height: calc(100vh - 8rem);
+  }
+  
+  .modal-header,
+  .modal-footer {
+    @apply p-3;
+  }
+  
+  .form-row > div {
+    @apply w-full mb-3;
+  }
+  
+  .modal-footer .btn {
+    @apply block w-full mb-2;
+  }
+  
+  .select2-container {
+    @apply w-full;
+  }
+}
+
+/* Medium screens */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .modal-dialog {
+    @apply max-w-lg;
+  }
+  
+  .modal-lg .modal-dialog {
+    @apply max-w-2xl;
+  }
+  
+  .modal-xl .modal-dialog {
+    @apply max-w-3xl;
+  }
+}
+
+/* Large screens */
+@media (min-width: 1025px) {
+  .modal-dialog {
+    @apply max-w-lg;
+  }
+  
+  .modal-lg .modal-dialog {
+    @apply max-w-3xl;
+  }
+  
+  .modal-xl .modal-dialog {
+    @apply max-w-5xl;
+  }
+}
+
+/* Fix for buttons in modals */
+.modal-footer .btn {
+  @apply inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500;
+}
+
+/* Fix for close button */
+.modal-header .close {
+  @apply p-0 ml-auto bg-transparent border-0 text-black float-right text-3xl font-semibold leading-none outline-none focus:outline-none;
+}
+
+/* Fix for modal backdrop with Tailwind */
+.modal-backdrop {
+  @apply fixed inset-0 bg-gray-500 bg-opacity-75;
+}
+
+/* Fix for DataTables */
+.dataTables_wrapper {
+  @apply w-full overflow-x-auto;
+}
+
+/* Fix for tables inside modals */
+.modal-body table {
+  @apply w-full;
+}
+
+/* Fix for long text in tables */
+.modal-body td, 
+.modal-body th {
+  @apply max-w-xs overflow-hidden text-ellipsis whitespace-nowrap;
+}
+
+/* Fix for form validation */
+.is-invalid {
+  @apply border-red-500 pr-10 text-red-900 placeholder-red-300 focus:outline-none focus:ring-red-500 focus:border-red-500;
+}
+
+.invalid-feedback {
+  @apply mt-2 text-sm text-red-600;
+}
+
+/* Fix for checkboxes and radios */
+.form-check {
+  @apply flex items-start;
+}
+
+.form-check-input {
+  @apply h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mr-2 mt-1;
+}
+
+.form-check-label {
+  @apply block text-sm text-gray-700;
+}
+
+/* Fix for input groups */
+.input-group {
+  @apply relative flex items-stretch w-full;
+}
+
+.input-group-prepend {
+  @apply flex;
+}
+
+.input-group-append {
+  @apply flex;
+}
+
+.input-group-text {
+  @apply flex items-center px-3 py-2 text-sm font-normal text-gray-700 text-center bg-gray-200 border border-gray-300;
+}
+
+/* Fix for file inputs */
+.custom-file {
+  @apply relative block w-full;
+}
+
+.custom-file-input {
+  @apply relative z-10 w-full h-full opacity-0 cursor-pointer;
+}
+
+.custom-file-label {
+  @apply absolute top-0 right-0 left-0 z-0 py-2 px-3 h-full border border-gray-300 rounded-md bg-white;
+}
+
+/* Fix for required fields */
+.required:after {
+  content: " *";
+  @apply text-red-500;
+}
+
+/* Fix for help text */
+.form-text {
+  @apply block mt-1 text-sm text-gray-600;
+}
+
+/* Fix for modal scrolling */
+.modal-scrollable {
+  @apply overflow-y-auto;
+}
+
+/* Fix for modal sizes */
+.modal-full-width {
+  @apply w-full max-w-full mx-4;
+}
+
+/* Fix for modal animations */
+.modal-enter {
+  @apply opacity-0;
+}
+
+.modal-enter-active {
+  @apply opacity-100 transition-opacity duration-300;
+}
+
+.modal-exit {
+  @apply opacity-100;
+}
+
+.modal-exit-active {
+  @apply opacity-0 transition-opacity duration-300;
+} 

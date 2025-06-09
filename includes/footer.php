@@ -6,6 +6,8 @@
 <!-- Custom JavaScript -->
 <script src="assets/js/script.js"></script>
 <script src="assets/js/responsive.js"></script>
+<script src="assets/js/modal-responsive.js"></script>
+<script src="assets/js/modal-desktop-fixes.js"></script>
 
 <script>
 // Global script to safely initialize DataTables
@@ -31,7 +33,140 @@ $(document).ready(function() {
     initDataTables('.data-table');
     
     // Initialize Select2
-    $('.select2').select2();
+    $('.select2').select2({
+        width: '100%' // Force 100% width
+    });
+    
+    // Fix modal heights and positions
+    $('.modal').on('shown.bs.modal', function() {
+        const $modal = $(this);
+        const $modalBody = $modal.find('.modal-body');
+        const $modalDialog = $modal.find('.modal-dialog');
+        const $modalContent = $modal.find('.modal-content');
+        const $modalHeader = $modal.find('.modal-header');
+        const $modalFooter = $modal.find('.modal-footer');
+        
+        // Calculate heights
+        const viewportHeight = window.innerHeight;
+        const headerHeight = $modalHeader.outerHeight() || 0;
+        const footerHeight = $modalFooter.outerHeight() || 0;
+        const maxBodyHeight = Math.floor(viewportHeight * 0.9) - headerHeight - footerHeight - 30;
+        
+        // Apply max height to body
+        $modalBody.css({
+            'max-height': maxBodyHeight + 'px',
+            'overflow-y': 'auto'
+        });
+        
+        // Center modal if smaller than viewport
+        const modalHeight = $modalContent.outerHeight();
+        if (modalHeight < viewportHeight) {
+            $modalDialog.css('margin-top', Math.max(10, (viewportHeight - modalHeight) / 2) + 'px');
+        } else {
+            $modalDialog.css('margin-top', '10px');
+        }
+    });
+    
+    // Fix form fields in modals
+    $('.modal').on('shown.bs.modal', function() {
+        $(this).find('select, input, textarea').each(function() {
+            if ($(this).hasClass('select2-hidden-accessible')) {
+                $(this).next('.select2-container').css('width', '100%');
+            } else {
+                $(this).css('max-width', '100%');
+            }
+        });
+        
+        // Make tables responsive inside modals
+        $(this).find('table').wrap('<div class="table-responsive"></div>');
+    });
+    
+    // Handle window resize for open modals
+    $(window).on('resize', function() {
+        $('.modal.show').each(function() {
+            const $modal = $(this);
+            const $modalBody = $modal.find('.modal-body');
+            const $modalDialog = $modal.find('.modal-dialog');
+            const $modalContent = $modal.find('.modal-content');
+            const $modalHeader = $modal.find('.modal-header');
+            const $modalFooter = $modal.find('.modal-footer');
+            
+            // Recalculate heights
+            const viewportHeight = window.innerHeight;
+            const headerHeight = $modalHeader.outerHeight() || 0;
+            const footerHeight = $modalFooter.outerHeight() || 0;
+            const maxBodyHeight = Math.floor(viewportHeight * 0.9) - headerHeight - footerHeight - 30;
+            
+            // Apply max height to body
+            $modalBody.css({
+                'max-height': maxBodyHeight + 'px',
+                'overflow-y': 'auto'
+            });
+            
+            // Adjust modal width based on screen size
+            if (window.innerWidth < 768) {
+                $modalDialog.css({
+                    'margin': '0.5rem',
+                    'max-width': 'calc(100% - 1rem)'
+                });
+            } else {
+                $modalDialog.css({
+                    'margin': '1.75rem auto'
+                });
+                
+                // Reset to default sizes based on modal size
+                if ($modalDialog.parent('.modal-lg').length) {
+                    $modalDialog.css('max-width', '800px');
+                } else if ($modalDialog.parent('.modal-xl').length) {
+                    $modalDialog.css('max-width', '1140px');
+                } else if ($modalDialog.parent('.modal-sm').length) {
+                    $modalDialog.css('max-width', '300px');
+                } else {
+                    $modalDialog.css('max-width', '500px');
+                }
+                
+                // Desktop-specific fixes for precision
+                if (window.innerWidth >= 992) {
+                    // Ensure modal content doesn't overflow
+                    const modalWidth = $modalDialog.width();
+                    
+                    // Fix form layout
+                    $modal.find('.form-row').css({
+                        'display': 'flex',
+                        'flex-wrap': 'wrap',
+                        'margin-right': '-5px',
+                        'margin-left': '-5px'
+                    });
+                    
+                    // Fix form columns
+                    $modal.find('.form-row > [class*="col-"]').css({
+                        'padding-right': '5px',
+                        'padding-left': '5px'
+                    });
+                    
+                    // Fix tables in modals
+                    $modal.find('table').each(function() {
+                        const $table = $(this);
+                        
+                        // Ensure table is responsive
+                        if (!$table.parent().hasClass('table-responsive')) {
+                            $table.wrap('<div class="table-responsive"></div>');
+                        }
+                        
+                        // Set table width to match container
+                        $table.css('width', '100%');
+                        
+                        // Fix column widths for better text display
+                        const colCount = $table.find('thead th').length;
+                        if (colCount > 0) {
+                            const colWidth = Math.floor(100 / colCount);
+                            $table.find('th, td').css('width', colWidth + '%');
+                        }
+                    });
+                }
+            }
+        });
+    });
 });
 
 // Toggle sidebar submenu function
