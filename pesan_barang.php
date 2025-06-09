@@ -363,8 +363,8 @@ $total_pages = ceil($total_records / $records_per_page);
                     <td class="py-2 px-4">
                         <div class="flex space-x-2">
                             <button type="button" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-md" onclick="viewPesanan(<?= $pesanan['id_pesanan'] ?>)">
-                                <i class="fas fa-eye"></i>
-                            </button>
+                            <i class="fas fa-eye"></i>
+                        </button>
                             
                             <?php if ((!isset($VIEW_ONLY) || $VIEW_ONLY !== true) && $_SESSION['user_role'] !== 'kasir'): ?>
                             <button type="button" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md" onclick="showEditModal(<?= $pesanan['id_pesanan'] ?>)">
@@ -1399,7 +1399,7 @@ $total_pages = ceil($total_records / $records_per_page);
                             </div>
                         </div>
                     </div>`;
-            });
+        });
     }
 </script>
 

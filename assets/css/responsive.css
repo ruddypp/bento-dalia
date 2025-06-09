@@ -1,0 +1,410 @@
+/* IMPORTANT FIX - Always show hamburger menu on mobile */
+#sidebar-toggle {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  z-index: 9999 !important;
+}
+
+@media (min-width: 1024px) {
+  #sidebar-toggle {
+    display: none !important;
+  }
+}
+
+/* Responsive CSS for Bento Kopi Inventory System */
+
+/* Base responsive styles */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
+}
+
+/* Card grid layouts for dashboards and reports */
+@media (max-width: 639px) {
+  .grid-cols-1, .grid-cols-2, .grid-cols-3, .grid-cols-4 {
+    display: grid;
+    grid-template-columns: 1fr !important;
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .grid-cols-3, .grid-cols-4 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1rem;
+  }
+}
+
+/* Small devices (phones, less than 640px) */
+@media (max-width: 639px) {
+  /* Sidebar */
+  .sidebar {
+    width: 85%;
+    max-width: 280px;
+    position: fixed;
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    box-shadow: none;
+    background: linear-gradient(135deg,rgb(68, 131, 52),rgb(15, 83, 41));
+    height: 100vh;
+    overflow-y: auto;
+    left: 0;
+    top: 0;
+  }
+  
+  .sidebar.active {
+    transform: translateX(0);
+    box-shadow: 5px 0 15px rgba(0, 0, 0, 0.2);
+    display: block !important;
+    visibility: visible !important;
+  }
+  
+  /* Overlay when sidebar is open */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  .sidebar-overlay.active {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  
+  /* Main content */
+  .content {
+    margin-left: 0 !important;
+    width: 100% !important;
+    padding: 1rem !important;
+    padding-top: 3.5rem !important;
+    transition: all 0.3s ease;
+  }
+  
+  /* Cards and grid layouts */
+  .grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+  
+  /* Form elements */
+  input, select, textarea {
+    font-size: 16px !important; /* Prevents iOS zoom on focus */
+    max-width: 100% !important;
+  }
+  
+  /* Form layouts */
+  .responsive-form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+  }
+  
+  .responsive-form-group > div,
+  .responsive-form-group > label,
+  .responsive-form-group > input,
+  .responsive-form-group > select,
+  .responsive-form-group > textarea {
+    width: 100% !important;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Modal dialogs */
+  .modal-content,
+  .responsive-modal {
+    width: 95% !important;
+    margin: 0 auto !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+  
+  .modal-body {
+    max-height: 60vh !important;
+    overflow-y: auto !important;
+  }
+  
+  .modal-header,
+  .modal-footer {
+    padding: 0.75rem !important;
+  }
+  
+  /* Tables */
+  .dataTables_wrapper .dataTables_length, 
+  .dataTables_wrapper .dataTables_filter {
+    float: none !important;
+    text-align: left !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  /* Buttons in tables */
+  .btn-group {
+    flex-direction: column !important;
+  }
+  
+  .btn-group .btn {
+    margin-bottom: 0.25rem !important;
+    width: 100% !important;
+  }
+  
+  /* Responsive buttons */
+  .responsive-button {
+    padding: 0.5rem 0.75rem !important;
+    min-height: 40px !important;
+    touch-action: manipulation;
+  }
+  
+  /* Action buttons in tables */
+  .action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  
+  .action-buttons .btn,
+  .action-buttons button {
+    flex: 1;
+    min-width: 40px;
+    padding: 0.375rem 0.5rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+  
+  /* Login page */
+  .login-container {
+    width: 90% !important;
+    max-width: none !important;
+  }
+}
+
+/* Medium devices (tablets, 640px to 1023px) */
+@media (min-width: 640px) and (max-width: 1023px) {
+  /* Sidebar */
+  .sidebar {
+    width: 280px;
+    max-width: 300px;
+    position: fixed;
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    box-shadow: none;
+    background: linear-gradient(135deg,rgb(68, 131, 52),rgb(15, 83, 41));
+    height: 100vh;
+    overflow-y: auto;
+    left: 0;
+    top: 0;
+  }
+  
+  .sidebar.active {
+    transform: translateX(0);
+    box-shadow: 5px 0 15px rgba(0, 0, 0, 0.2);
+    display: block !important;
+    visibility: visible !important;
+  }
+  
+  /* Overlay when sidebar is open */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  .sidebar-overlay.active {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  
+  /* Main content */
+  .content {
+    margin-left: 0 !important;
+    width: 100% !important;
+    padding: 1rem !important;
+    padding-top: 3.5rem !important;
+  }
+  
+  /* Cards and grid layouts */
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  
+  /* Tables */
+  .dataTables_wrapper .dataTables_length, 
+  .dataTables_wrapper .dataTables_filter {
+    margin-bottom: 0.5rem !important;
+  }
+}
+
+/* Common styles for both mobile and tablet */
+@media (max-width: 1023px) {
+  /* Sidebar navigation */
+  .sidebar a {
+    padding: 0.75rem 1rem !important;
+    margin-bottom: 0.35rem !important;
+  }
+  
+  .sidebar .sidebar-item {
+    margin-bottom: 0.35rem !important;
+  }
+  
+  .sidebar nav ul {
+    margin-bottom: 1rem !important;
+  }
+  
+  #sidebar-close {
+    padding: 0.5rem;
+    margin-right: -0.5rem;
+  }
+  /* Header and navigation */
+  .navbar-brand {
+    font-size: 1.25rem !important;
+  }
+  
+  /* Helper classes for mobile spacing */
+  .mb-mobile {
+    margin-bottom: 1rem !important;
+  }
+  
+  .mt-mobile {
+    margin-top: 1rem !important;
+  }
+  
+  .p-mobile {
+    padding: 1rem !important;
+  }
+  
+  /* Smaller typography on mobile */
+  h1 {
+    font-size: 1.5rem !important;
+  }
+  
+  h2 {
+    font-size: 1.25rem !important;
+  }
+  
+  h3 {
+    font-size: 1.125rem !important;
+  }
+  
+  /* Form layouts */
+  .form-row {
+    flex-direction: column !important;
+  }
+  
+  .form-row > div {
+    margin-bottom: 0.75rem !important;
+    width: 100% !important;
+  }
+  
+  /* Modals */
+  .modal-dialog {
+    max-width: 95% !important;
+    margin: 1rem auto !important;
+  }
+  
+  /* DataTables responsive adjustments */
+  table.dataTable thead .sorting:after,
+  table.dataTable thead .sorting_asc:after,
+  table.dataTable thead .sorting_desc:after {
+    right: 8px !important;
+  }
+  
+  /* Fix for select2 dropdowns */
+  .select2-container {
+    width: 100% !important;
+  }
+  
+  /* Fix for button groups */
+  .action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  
+  .action-buttons .btn {
+    flex: 1;
+    min-width: 40px;
+    padding: 0.375rem 0.5rem !important;
+  }
+}
+
+/* Toggle button for mobile sidebar */
+#sidebar-toggle {
+  display: block !important;
+}
+
+@media (max-width: 1023px) {
+  #sidebar-toggle {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1001;
+    width: 2.5rem;
+    height: 2.5rem;
+    background-color: rgba(15, 83, 41, 0.95);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  #sidebar-toggle:hover {
+    background-color: rgb(15, 83, 41);
+    transform: scale(1.05);
+  }
+  
+  #sidebar-toggle.active {
+    left: calc(16rem - 1rem);
+    background-color: rgb(20, 110, 55);
+  }
+}
+
+/* Print styles - ensure they're preserved */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+  
+  body {
+    font-size: 12pt;
+    margin: 0;
+    padding: 0;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+  }
+} 

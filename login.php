@@ -81,8 +81,8 @@ $store_info = mysqli_fetch_assoc($result);
         }
     </style>
 </head>
-<body class="bg-primary-100 min-h-screen flex items-center justify-center">
-    <div class="max-w-md w-full bg-white shadow-lg rounded-xl overflow-hidden">
+<body class="bg-primary-100 min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-white shadow-lg rounded-xl overflow-hidden login-container">
         <div class="p-8 header-gradient text-white text-center">
             <div class="inline-block mb-2">
                 <img src="logo_bentokopi.png" class="w-20 h-20 object-contain rounded-full bg-white p-2 shadow-md">

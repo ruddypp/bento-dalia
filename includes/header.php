@@ -57,9 +57,11 @@ $store_info = getStoreInfo();
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     
-    <!-- DataTables -->
+    <!-- DataTables with Responsive extension -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.dataTables.min.css">
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
     
     <!-- Select2 -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -71,6 +73,28 @@ $store_info = getStoreInfo();
     <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
+    
+    <!-- Critical hamburger menu fix -->
+    <style>
+        @media (max-width: 1023px) {
+            #sidebar-toggle {
+                display: flex !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                z-index: 9999 !important;
+                position: fixed !important;
+                top: 16px !important;
+                left: 16px !important;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            #sidebar-toggle {
+                display: none !important;
+            }
+        }
+    </style>
     
     <style>
         body {
@@ -151,17 +175,53 @@ $store_info = getStoreInfo();
     </style>
 </head>
 <body class="bg-gray-50">
+    <!-- Inline script for hamburger menu visibility -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Force hamburger menu to be visible on mobile
+            const hamburgerBtn = document.getElementById('sidebar-toggle');
+            if (hamburgerBtn) {
+                hamburgerBtn.style.display = 'flex';
+                hamburgerBtn.style.visibility = 'visible';
+                hamburgerBtn.style.opacity = '1';
+                hamburgerBtn.style.zIndex = '9999';
+            }
+            
+            // Initial visibility check
+            if (window.innerWidth >= 1024) {
+                hamburgerBtn.style.display = 'none';
+            }
+            
+            // Add resize listener to maintain visibility
+            window.addEventListener('resize', function() {
+                if (window.innerWidth < 1024) {
+                    hamburgerBtn.style.display = 'flex';
+                    hamburgerBtn.style.visibility = 'visible';
+                    hamburgerBtn.style.opacity = '1';
+                } else {
+                    hamburgerBtn.style.display = 'none';
+                }
+            });
+        });
+    </script>
     <?php if(isset($_SESSION['user_id'])): ?>
-    <div class="flex">
+    <!-- Hamburger menu button - outside of sidebar -->
+<button id="sidebar-toggle" class="fixed top-4 left-4 z-50 bg-green-700 text-white rounded-full p-2 hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-400 shadow-lg block">
+    <i class="fas fa-bars text-lg"></i>
+</button>
+
+<div class="flex">
         <!-- Sidebar -->
-        <div id="sidebar" class="sidebar text-white w-64 px-4 py-4 fixed h-full z-50">
-        <div class="flex flex-col items-start justify-between mb-6">
-    <h2 class="text-xl font-bold flex items-center">
-        <i class="fas fa-boxes mr-2"></i> BKIS
-    </h2>
-    <p class="text-sm font-light ml-7">(Bento Kopi Inventory System)</p>
-    <button id="sidebar-toggle" class="lg:hidden bg-blue-600 rounded-full p-2 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400">
-        <i class="fas fa-bars"></i>
+        <div id="sidebar" class="sidebar text-white w-64 px-4 py-4 fixed h-full z-50 lg:transform-none">
+        <div class="flex items-center justify-between mb-6">
+    <div>
+        <h2 class="text-xl font-bold flex items-center">
+            <i class="fas fa-boxes mr-2"></i> BKIS
+        </h2>
+        <p class="text-sm font-light ml-7">(Bento Kopi Inventory System)</p>
+    </div>
+    <button id="sidebar-close" class="lg:hidden text-white opacity-80 hover:opacity-100 focus:outline-none">
+        <i class="fas fa-times text-lg"></i>
     </button>
 </div>
 
@@ -392,9 +452,9 @@ $store_info = getStoreInfo();
         </div>
         
         <!-- Content -->
-        <div id="content" class="flex-1 pl-64 transition-all duration-300">
+        <div id="content" class="content flex-1 pl-0 lg:pl-64 transition-all duration-300">
             <div class="sticky top-0 z-40 bg-white shadow-sm">
-                <div class="flex justify-between items-center px-6 py-2.5">
+                <div class="flex justify-between items-center px-4 lg:px-6 py-2.5">
                     <h1 class="text-xl font-bold text-gray-800"><?= isset($pageTitle) ? $pageTitle : 'Dashboard' ?></h1>
                     
                     <div class="flex items-center space-x-4">
