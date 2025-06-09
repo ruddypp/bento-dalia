@@ -429,7 +429,7 @@ $store_info = getStoreInfo();
                     
                     <?php 
                     // Cek akses untuk menu Data Menu
-                    $show_menu = ($user_role == 'admin' || in_array($user_role, ['kasir']));
+                    $show_menu = ($user_role == 'admin' || in_array($user_role, ['kasir', 'crew']));
                     
                     if ($show_menu):
                     ?>

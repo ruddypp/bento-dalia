@@ -5,6 +5,46 @@ require_once 'config/database.php';
 require_once 'config/functions.php';
 require_once 'role_permission_check.php';
 
+// Enforce view-only for crew
+if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'crew') {
+    $permission = 'view';
+    $VIEW_ONLY = true;
+    $EDIT_ALLOWED = false;
+    $DELETE_ALLOWED = false;
+    
+    // Add JavaScript to hide form and action buttons
+    echo '<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Hide the add/edit form
+        const menuForm = document.getElementById("menuForm");
+        if (menuForm) {
+            menuForm.style.display = "none";
+        }
+        
+        // Hide action buttons (Edit/Delete)
+        const actionButtons = document.querySelectorAll(".menu-card .flex.justify-end");
+        actionButtons.forEach(function(btnContainer) {
+            btnContainer.style.display = "none";
+        });
+        
+        // Hide add menu button
+        const addMenuBtn = document.querySelector(".mb-4 .bg-green-500");
+        if (addMenuBtn) {
+            addMenuBtn.style.display = "none";
+        }
+        
+        // Add view-only message
+        const formContainer = document.querySelector(".bg-white.p-6.rounded-lg.shadow-md");
+        if (formContainer) {
+            const viewMsg = document.createElement("div");
+            viewMsg.className = "bg-gray-100 p-4 rounded-md text-gray-700 mt-4";
+            viewMsg.innerHTML = "<i class=\'fas fa-lock mr-2\'></i> Akses terbatas. Anda hanya dapat melihat menu.";
+            formContainer.insertBefore(viewMsg, menuForm);
+        }
+    });
+    </script>';
+}
+
 // Fungsi untuk mendapatkan harga barang berdasarkan id_barang
 function getHargaBarang($conn, $id_barang) {
     $query = "SELECT harga FROM barang WHERE id_barang = ?";

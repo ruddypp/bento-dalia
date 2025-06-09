@@ -1004,12 +1004,15 @@ function checkPermission($page) {
             'detail_penjualan.php' => 'edit'
         ],
         'crew' => [
-            'barang.php' => 'edit',
-            'bahan_baku.php' => 'edit',
+            'barang.php' => 'view',
+            'bahan_baku.php' => 'view',
             'supplier.php' => 'view',
             'pesan_barang.php' => 'view',
             'retur_barang.php' => 'view',
-            'penjualan.php' => 'edit',
+            'penjualan.php' => 'view',
+            'barang_lost.php' => 'view',
+            'menu_makanan.php' => 'view',
+            'menu_minuman.php' => 'view',
             'laporan_penjualan.php' => 'edit',
             'laporan_masuk.php' => 'edit',
             'index.php' => 'edit',

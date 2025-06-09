@@ -5,6 +5,14 @@ require_once 'config/database.php';
 require_once 'config/functions.php';
 require_once 'role_permission_check.php'; // Tambahkan ini untuk memeriksa hak akses
 
+// Enforce view-only for crew
+if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'crew') {
+    $permission = 'view';
+    $VIEW_ONLY = true;
+    $EDIT_ALLOWED = false;
+    $DELETE_ALLOWED = false;
+}
+
 // Create retur_barang table if it doesn't exist
 $create_table_query = "CREATE TABLE IF NOT EXISTS retur_barang (
     id_retur INT PRIMARY KEY AUTO_INCREMENT,

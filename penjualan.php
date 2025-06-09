@@ -5,10 +5,38 @@ require_once 'config/database.php';
 require_once 'config/functions.php';
 require_once 'role_permission_check.php'; // Tambahkan ini untuk memeriksa hak akses
 
+// Enforce view-only for crew
+if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'crew') {
+    $permission = 'view';
+    $VIEW_ONLY = true;
+    $EDIT_ALLOWED = false;
+    $DELETE_ALLOWED = false;
+}
+
 // Initialize variables
 $errors = [];
 $success = false;
 $cart = []; // Shopping cart for menu items
+
+// Add JavaScript to hide add to cart buttons for crew (VIEW_ONLY mode)
+if (isset($VIEW_ONLY) && $VIEW_ONLY === true) {
+    echo '<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Hide all add to cart forms
+        const addToCartForms = document.querySelectorAll("form[action] button[name=\'add_to_cart\']");
+        addToCartForms.forEach(function(btn) {
+            const form = btn.closest("form");
+            if (form) {
+                form.style.display = "none";
+                const viewMsg = document.createElement("div");
+                viewMsg.className = "mt-2 text-sm text-gray-500 italic";
+                viewMsg.innerText = "Hanya dapat melihat";
+                form.parentNode.appendChild(viewMsg);
+            }
+        });
+    });
+    </script>';
+}
 
 // Check if cart exists in session, if not create it
 if (!isset($_SESSION['cart'])) {
@@ -130,7 +158,7 @@ function generateInvoiceNumber() {
 }
 
 // Handle add to cart
-if (isset($_POST['add_to_cart']) && isset($_POST['id_menu']) && isset($_POST['quantity'])) {
+if (isset($_POST['add_to_cart']) && isset($_POST['id_menu']) && isset($_POST['quantity']) && (!isset($VIEW_ONLY) || $VIEW_ONLY !== true)) {
     $id_menu = intval($_POST['id_menu']);
     $quantity = intval($_POST['quantity']);
     
@@ -641,6 +669,13 @@ if (isset($_GET['success']) && $_GET['success'] == '1') {
                     <i class="fas fa-shopping-cart mr-2 text-blue-600"></i> Keranjang
                 </h2>
                 
+                <?php if (isset($VIEW_ONLY) && $VIEW_ONLY === true): ?>
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-lock text-4xl mb-2"></i>
+                    <p>Akses terbatas. Anda hanya dapat melihat.</p>
+                </div>
+                <?php else: ?>
+                
                 <?php if (empty($cart)): ?>
                 <div class="text-center py-8 text-gray-500">
                     <i class="fas fa-shopping-basket text-4xl mb-2"></i>
@@ -722,6 +757,7 @@ if (isset($_GET['success']) && $_GET['success'] == '1') {
                         </button>
                     </form>
                 </div>
+                <?php endif; ?>
                 <?php endif; ?>
             </div>
         </div>

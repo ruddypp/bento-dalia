@@ -7,12 +7,22 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-// Special permission handling for headproduksi and purchasing roles
-if (isset($_SESSION['user_role']) && ($_SESSION['user_role'] === 'headproduksi' || $_SESSION['user_role'] === 'purchasing')) {
-    $permission = 'full';
-    $VIEW_ONLY = false;
+// Special permission handling for different roles
+if (isset($_SESSION['user_role'])) {
+    if ($_SESSION['user_role'] === 'headproduksi' || $_SESSION['user_role'] === 'purchasing') {
+        // Full access for headproduksi and purchasing
+        $permission = 'full';
+        $VIEW_ONLY = false;
+    } elseif ($_SESSION['user_role'] === 'crew') {
+        // View-only access for crew, but allow detail viewing
+        $permission = 'view';
+        $VIEW_ONLY = true;
+    } else {
+        // For other roles, use regular permission check
+        require_once 'role_permission_check.php';
+    }
 } else {
-    // For other roles, use regular permission check
+    // For users not logged in or without role
     require_once 'role_permission_check.php';
 }
 

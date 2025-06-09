@@ -5,10 +5,17 @@ require_once 'config/database.php';
 require_once 'config/functions.php';
 require_once 'role_permission_check.php';
 
-// Force full permission for headproduksi
-if (isset($_SESSION['user_role']) && ($_SESSION['user_role'] === 'headproduksi' || $_SESSION['user_role'] === 'purchasing')) {
-    $permission = 'full';
-    $VIEW_ONLY = false;
+// Force full permission for headproduksi, view permission for crew
+if (isset($_SESSION['user_role'])) {
+    if ($_SESSION['user_role'] === 'headproduksi' || $_SESSION['user_role'] === 'purchasing') {
+        $permission = 'full';
+        $VIEW_ONLY = false;
+    } elseif ($_SESSION['user_role'] === 'crew') {
+        $permission = 'view';
+        $VIEW_ONLY = true;
+        $EDIT_ALLOWED = false;
+        $DELETE_ALLOWED = false;
+    }
 }
 
 // Buat direktori uploads/lost jika belum ada
