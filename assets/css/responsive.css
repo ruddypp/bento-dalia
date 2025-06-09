@@ -12,6 +12,14 @@
   }
 }
 
+/* Overlay fix - hide all overlays */
+.sidebar-overlay,
+.sidebar-overlay.active {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
 /* Responsive CSS for Bento Kopi Inventory System */
 
 /* Base responsive styles */
