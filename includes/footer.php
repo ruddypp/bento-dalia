@@ -197,12 +197,8 @@ function openSidebar() {
     
     // Force styles to ensure visibility
     sidebar.style.display = 'block';
-    sidebar.style.visibility = 'visible';
-    sidebar.style.transform = 'translateX(0)';
-    sidebar.style.zIndex = '1000';
-    
-    sidebar.classList.add('active');
-    sidebarToggle.classList.add('active');
+    sidebar.classList.remove('-translate-x-full');
+    sidebar.classList.add('open');
     
     // Store sidebar state
     localStorage.setItem('sidebarActive', 'true');
@@ -214,9 +210,8 @@ function closeSidebar() {
     const sidebarToggle = document.getElementById('sidebar-toggle');
     
     if (sidebar && sidebarToggle) {
-        sidebar.classList.remove('active');
-        sidebar.style.transform = 'translateX(-100%)';
-        sidebarToggle.classList.remove('active');
+        sidebar.classList.remove('open');
+        sidebar.classList.add('-translate-x-full');
         
         // Store sidebar state
         localStorage.setItem('sidebarActive', 'false');
@@ -229,7 +224,7 @@ const toggleSidebar = function() {
     
     if (!sidebar) return;
     
-    if (sidebar.classList.contains('active')) {
+    if (sidebar.classList.contains('open')) {
         closeSidebar();
     } else {
         openSidebar();
@@ -262,32 +257,43 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Check if current page is in a submenu and show that submenu
 document.addEventListener('DOMContentLoaded', function() {
-    // Create sidebar overlay
-    createSidebarOverlay();
-    
     // Initialize responsive sidebar state
     const sidebar = document.getElementById('sidebar');
     const sidebarToggle = document.getElementById('sidebar-toggle');
+    
+    if (!sidebar || !sidebarToggle) return;
+    
     const isMobile = window.innerWidth < 1024;
     
+    // Set initial state based on screen size
     if (isMobile) {
-        // Always ensure sidebar is closed on page load for mobile
-        sidebar.classList.remove('active');
-        if (sidebarToggle) sidebarToggle.classList.remove('active');
-        localStorage.setItem('sidebarActive', 'false');
+        // On mobile, hide sidebar initially
+        sidebar.classList.add('-translate-x-full');
+        sidebar.classList.remove('open');
+    } else {
+        // On desktop, ensure sidebar is visible
+        sidebar.classList.remove('-translate-x-full'); 
+        sidebar.style.transform = '';
     }
     
     // Add resize listener to handle responsive changes
     window.addEventListener('resize', function() {
-        if (window.innerWidth >= 1024) {
-            // On desktop, ensure sidebar is visible and reset mobile changes
-            sidebar.classList.remove('active');
-            sidebarToggle.classList.remove('active');
-            overlay.classList.remove('active');
-            sidebar.removeAttribute('style');
+        const isNowMobile = window.innerWidth < 1024;
+        
+        if (!isNowMobile) {
+            // Switching to desktop
+            sidebar.classList.remove('-translate-x-full');
+            sidebar.style.transform = '';
+            sidebar.style.display = 'block';
+            sidebar.style.visibility = 'visible';
         } else {
-            // On mobile, ensure sidebar toggle is visible
+            // Switching to mobile
+            if (!sidebar.classList.contains('open')) {
+                sidebar.classList.add('-translate-x-full');
+            }
             sidebarToggle.style.display = 'flex';
+            sidebarToggle.style.visibility = 'visible';
+            sidebarToggle.style.opacity = '1';
         }
     });
     

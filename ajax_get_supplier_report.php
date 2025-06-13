@@ -1,11 +1,19 @@
 <?php
+// Start the session to access $_SESSION
+session_start();
 require_once 'config/database.php';
 require_once 'config/functions.php';
-require_once 'role_permission_check.php';
+// require_once 'role_permission_check.php'; // Removed this line as it blocks crew users from seeing details
 
 // Pastikan parameter ada
 if (!isset($_GET['date']) || !isset($_GET['periode']) || !isset($_GET['supplier_id'])) {
     echo "<div class='text-red-500 p-4'>Parameter tidak lengkap</div>";
+    exit;
+}
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    echo "<div class='text-red-500 p-4'>Silakan login terlebih dahulu</div>";
     exit;
 }
 

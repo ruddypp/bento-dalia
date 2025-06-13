@@ -97,6 +97,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit();
     }
     elseif (isset($_POST['delete_bahan_baku'])) {
+        // Check if user has permission to delete bahan baku
+        if ($_SESSION['user_role'] === 'kasir') {
+            setAlert("error", "Anda tidak memiliki akses untuk menghapus bahan baku");
+            header("Location: bahan_baku.php");
+            exit();
+        }
+        
         // Delete bahan baku
         $id = (int)$_POST['id_bahan_baku'];
         
@@ -1012,10 +1019,12 @@ for ($i = 1; $i <= 4; $i++) {
                                         onclick="editBahanBaku(<?= $item['id_bahan_baku'] ?>, '<?= $item['nama_barang'] ?>', <?= $item['qty'] ?>, '<?= $item['satuan'] ?>', <?= $item['periode'] ?>, <?= $item['harga_satuan'] ?>, '<?= $item['lokasi'] ?>')">
                                     <i class="fas fa-edit"></i>
                                 </button>
+                                <?php if ($_SESSION['user_role'] !== 'kasir'): // Only allow admin and other roles to delete ?>
                                 <button class="text-red-500 hover:text-red-700 mr-2" 
                                         onclick="deleteBahanBaku(<?= $item['id_bahan_baku'] ?>, '<?= $item['nama_barang'] ?>')">
                                     <i class="fas fa-trash"></i>
                                 </button>
+                                <?php endif; ?>
                                 <button class="bg-yellow-600 hover:bg-yellow-700 text-white p-2 rounded mr-1" title="Retur"
                                         onclick="processRetur(<?= $item['id_bahan_baku'] ?>, '<?= $item['nama_barang'] ?>', <?= $item['qty'] ?>, '<?= $item['satuan'] ?>')">
                                     <i class="fas fa-undo-alt"></i>

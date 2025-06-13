@@ -5,6 +5,27 @@ require_once 'config/database.php';
 require_once 'config/functions.php';
 require_once 'role_permission_check.php';
 
+// Additional style to ensure hamburger menu is visible
+echo '<style>
+    @media (max-width: 1023px) {
+        #sidebar-toggle {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            z-index: 10000 !important;
+            position: fixed !important;
+            top: 1rem !important;
+            left: 1rem !important;
+            background-color: #15803d !important;
+            color: white !important;
+        }
+        
+        #sidebar-toggle i {
+            display: inline-block !important;
+        }
+    }
+</style>';
+
 // Enforce view-only for crew
 if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'crew') {
     $permission = 'view';
@@ -21,36 +42,29 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'crew') {
             menuForm.style.display = "none";
         }
         
-        // Hide action buttons (Edit/Delete)
-        const actionButtons = document.querySelectorAll(".menu-card .flex.justify-end");
-        actionButtons.forEach(function(btnContainer) {
-            btnContainer.style.display = "none";
+        // Hide only Edit/Delete buttons but keep the detail view functionality
+        const editButtons = document.querySelectorAll(".menu-card a.bg-blue-500, .menu-card button.bg-red-500");
+        editButtons.forEach(function(btn) {
+            btn.style.display = "none";
         });
         
-        // Hide add menu button
-        const addMenuBtn = document.querySelector(".mb-4 .bg-green-500");
-        if (addMenuBtn) {
-            addMenuBtn.style.display = "none";
+        // Hide add menu button and entire form
+        const menuFormContainer = document.querySelector(".bg-white.p-6.rounded-lg.shadow-md.mb-6");
+        if (menuFormContainer) {
+            menuFormContainer.style.display = "none";
         }
         
-        // Add view-only message
-        const formContainer = document.querySelector(".bg-white.p-6.rounded-lg.shadow-md");
-        if (formContainer) {
+        // Add view-only message at the top of the page
+        const contentDiv = document.querySelector(".ml-17.p-2");
+        if (contentDiv) {
             const viewMsg = document.createElement("div");
-            viewMsg.className = "bg-gray-100 p-4 rounded-md text-gray-700 mt-4";
+            viewMsg.className = "bg-gray-100 p-4 rounded-md text-gray-700 mb-6";
             viewMsg.innerHTML = "<i class=\'fas fa-lock mr-2\'></i> Akses terbatas. Anda hanya dapat melihat menu.";
-            formContainer.insertBefore(viewMsg, menuForm);
+            const firstChild = contentDiv.firstChild;
+            contentDiv.insertBefore(viewMsg, firstChild.nextSibling);
         }
     });
     </script>';
-}
-
-// Enforce view-only for crew
-if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'crew') {
-    $permission = 'view';
-    $VIEW_ONLY = true;
-    $EDIT_ALLOWED = false;
-    $DELETE_ALLOWED = false;
 }
 
 // Fungsi untuk mendapatkan harga barang berdasarkan id_barang
@@ -135,7 +149,7 @@ $bahan_items = [];
 $barang_list = getBarangData($conn);
 
 // Handle form submission untuk tambah/edit menu
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_menu'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_menu']) && (!isset($VIEW_ONLY) || $VIEW_ONLY !== true)) {
     // Ambil data dari form
     $id_menu = isset($_POST['id_menu']) ? $_POST['id_menu'] : '';
     $nama_menu = trim($_POST['nama_menu']);
@@ -282,7 +296,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_menu'])) {
 }
 
 // Handle delete menu
-if (isset($_GET['delete']) && !empty($_GET['delete'])) {
+if (isset($_GET['delete']) && !empty($_GET['delete']) && (!isset($VIEW_ONLY) || $VIEW_ONLY !== true)) {
     $id_to_delete = $_GET['delete'];
     
     try {
@@ -341,7 +355,7 @@ if (isset($_GET['delete']) && !empty($_GET['delete'])) {
 }
 
 // Handle edit menu (load data untuk edit)
-if (isset($_GET['edit']) && !empty($_GET['edit'])) {
+if (isset($_GET['edit']) && !empty($_GET['edit']) && (!isset($VIEW_ONLY) || $VIEW_ONLY !== true)) {
     $id_to_edit = $_GET['edit'];
     $edit_mode = true;
     
@@ -689,14 +703,14 @@ if ($table_check->num_rows > 0) {
 
 <!-- Modal Detail Menu -->
 <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-    <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full transform transition-all duration-300 scale-90 opacity-0" id="modalContent">
-        <div class="flex justify-between items-center p-6 border-b">
-            <h3 class="text-2xl font-bold text-gray-800" id="detailTitle">Detail Menu</h3>
+    <div class="bg-white rounded-xl shadow-2xl sm:max-w-md md:max-w-lg lg:max-w-2xl w-[95%] md:w-full mx-auto transform transition-all duration-300 scale-90 opacity-0" id="modalContent" style="max-height: 90vh; overflow-y: auto;">
+        <div class="flex justify-between items-center p-3 sm:p-4 border-b">
+            <h3 class="text-lg sm:text-xl font-bold text-gray-800" id="detailTitle">Detail Menu</h3>
             <button id="closeDetailBtn" class="text-gray-500 hover:text-gray-700 focus:outline-none transition-transform hover:rotate-90 duration-300">
                 <i class="fas fa-times text-xl"></i>
             </button>
         </div>
-        <div class="p-6" id="detailContent">
+        <div class="p-3 sm:p-4" id="detailContent">
             <!-- Content will be filled dynamically -->
         </div>
     </div>
@@ -884,9 +898,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 const title = card.querySelector('h3')?.textContent || 'Detail Menu';
-                const price = card.querySelector('.price')?.textContent || '';
                 const image = card.querySelector('img')?.src || '';
                 const description = card.querySelector('.text-gray-600')?.textContent || '';
+                
+                // Get bahan (ingredients) information - it's in the div with "Bahan:" label
+                let bahan = '';
+                const bahanElement = card.querySelector('div.mb-3:nth-child(2) p.text-sm.text-gray-600');
+                if (bahanElement) {
+                    bahan = bahanElement.textContent || '';
+                }
+                
+                // Get modal and harga data
+                const hargaModal = card.querySelector('.text-sm.font-semibold.text-gray-700')?.textContent || '';
+                const hargaJual = card.querySelector('.text-sm.font-semibold.text-blue-600')?.textContent || '';
+                const keuntungan = card.querySelector('.text-sm.font-semibold.text-blue-600')?.textContent || '';
                 
                 const detailTitle = document.getElementById('detailTitle');
                 const detailContent = document.getElementById('detailContent');
@@ -894,20 +919,46 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (detailTitle) detailTitle.textContent = title;
                 if (detailContent) {
                     detailContent.innerHTML = `
-                        <div class="flex flex-col md:flex-row">
-                            <div class="w-full md:w-1/3 mb-4 md:mb-0 md:mr-6">
-                                <img src="${image}" class="w-full h-auto rounded-lg shadow-md" alt="${title}">
+                        <div class="flex flex-col">
+                            <div class="w-full mb-3">
+                                <img src="${image}" alt="${title}" class="w-full max-w-xs mx-auto rounded-lg shadow-md">
                             </div>
-                            <div class="w-full md:w-2/3">
-                                <div class="mb-4">
-                                    <p class="text-gray-600 mb-4">${description}</p>
-                                    <p class="text-xl font-semibold text-gray-800">${price}</p>
+                            <div class="w-full">
+                                <h4 class="text-base sm:text-lg font-semibold">Deskripsi</h4>
+                                <div class="mt-1 sm:mt-2">
+                                    <p class="text-sm sm:text-base text-gray-700"><span class="font-medium">Bahan:</span></p>
+                                    <div class="text-sm sm:text-base text-gray-700 mb-3">
+                                        <p class="font-medium mb-1">Bahan-bahan</p>
+                                        <p>${bahan}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-2 sm:mt-3">
+                                    <h4 class="text-base sm:text-lg font-semibold">Harga</h4>
+                                    <div class="grid grid-cols-2 gap-1 mt-1 sm:mt-2 text-sm sm:text-base">
+                                        <div>
+                                            <p class="text-gray-700">Harga Jual:</p>
+                                            <p class="text-gray-700">Harga Modal:</p>
+                                            <p class="text-gray-700">Keuntungan:</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-gray-900 font-medium">${hargaJual}</p>
+                                            <p class="text-gray-900 font-medium">${hargaModal}</p>
+                                            <p class="text-gray-900 font-medium">${keuntungan}</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     `;
                 }
                 
+                // Center modal
+                detailModal.style.display = 'flex';
+                detailModal.style.alignItems = 'center';
+                detailModal.style.justifyContent = 'center';
+                
+                // Show modal with animation
                 detailModal.classList.remove('hidden');
                 setTimeout(() => {
                     modalContent.classList.remove('scale-90', 'opacity-0');
@@ -923,9 +974,25 @@ document.addEventListener('DOMContentLoaded', function() {
         if (menuCards && menuCards.length > 0) {
             menuCards.forEach(card => {
                 if (card) {
-                    const menuImage = card.querySelector('img');
-                    if (menuImage) {
-                        menuImage.addEventListener('click', function() {
+                    // Add click handler to the entire card
+                    card.addEventListener('click', function(e) {
+                        // Skip if clicking on a button or link
+                        if (e.target.tagName === 'BUTTON' || 
+                            e.target.tagName === 'A' || 
+                            e.target.closest('button') || 
+                            e.target.closest('a')) {
+                            return;
+                        }
+                        
+                        // Show detail modal
+                        showDetailModal(this);
+                    });
+                    
+                    // Add specific click handler for the "Lihat Detail" button in the hover overlay
+                    const viewDetailBtn = card.querySelector('.group-hover\\:opacity-100 button');
+                    if (viewDetailBtn) {
+                        viewDetailBtn.addEventListener('click', function(e) {
+                            e.stopPropagation(); // Prevent card click from firing
                             showDetailModal(card);
                         });
                     }
@@ -1180,6 +1247,39 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initial calculations
         if (bahanContainer && bahanInput) {
             setTimeout(calculateHargaModal, 100); // Delay to ensure DOM is fully processed
+        }
+
+        // Special fix for hamburger menu on mobile in menu_minuman.php
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        if (sidebarToggle) {
+            // Ensure hamburger menu is visible with high z-index
+            sidebarToggle.style.zIndex = "10000";
+            sidebarToggle.style.display = "flex";
+            sidebarToggle.style.visibility = "visible";
+            sidebarToggle.style.opacity = "1";
+            
+            // Check if in mobile view
+            if (window.innerWidth < 1024) {
+                // Add special styling to make hamburger menu easy to click
+                sidebarToggle.style.position = "fixed";
+                sidebarToggle.style.top = "1rem";
+                sidebarToggle.style.left = "1rem";
+                sidebarToggle.style.padding = "0.5rem";
+                sidebarToggle.style.backgroundColor = "white";
+                sidebarToggle.style.borderRadius = "0.375rem";
+                sidebarToggle.style.boxShadow = "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)";
+            }
+        }
+        
+        // Also make sure the sidebar itself has high z-index
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) {
+            sidebar.style.zIndex = "9999";
+            
+            // Ensure compatibility with new class names
+            if (window.innerWidth < 1024 && !sidebar.classList.contains('open')) {
+                sidebar.classList.add('-translate-x-full');
+            }
         }
     } catch (error) {
         console.error('Global error in script:', error);

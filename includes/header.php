@@ -181,6 +181,36 @@ $store_info = getStoreInfo();
         .modal-body .table-responsive {
             overflow-x: auto;
         }
+        
+        /* Improved sidebar mobile handling */
+        @media (max-width: 1023px) {
+            #sidebar {
+                transform: none; /* Remove default transform */
+                transition: all 0.3s ease;
+                z-index: 9999 !important;
+                position: fixed !important;
+            }
+            
+            #sidebar.-translate-x-full {
+                transform: translateX(-100%) !important;
+            }
+            
+            #sidebar.open {
+                transform: translateX(0) !important;
+            }
+            
+            #sidebar-toggle {
+                position: fixed !important;
+                top: 16px !important;
+                left: 16px !important;
+                z-index: 9998 !important;
+                display: flex !important;
+            }
+            
+            .content {
+                padding-left: 0 !important;
+            }
+        }
     </style>
     
     <!-- Critical hamburger menu fix -->
@@ -281,6 +311,37 @@ $store_info = getStoreInfo();
             background-color: rgba(59, 130, 246, 0.1);
         }
     </style>
+    
+    <!-- Responsive sidebar initialization script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get references to sidebar elements
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            
+            if (!sidebar || !sidebarToggle) return;
+            
+            // Check if mobile view
+            const isMobile = window.innerWidth < 1024;
+            
+            // Initialize sidebar state based on screen size
+            if (isMobile) {
+                // On mobile, hide sidebar initially
+                sidebar.classList.add('-translate-x-full');
+            } else {
+                // On desktop, ensure sidebar is visible
+                sidebar.classList.remove('-translate-x-full');
+            }
+            
+            // Make hamburger button visible on mobile
+            if (isMobile) {
+                sidebarToggle.style.display = 'flex';
+                sidebarToggle.style.visibility = 'visible';
+                sidebarToggle.style.opacity = '1';
+                sidebarToggle.style.zIndex = '10000';
+            }
+        });
+    </script>
 </head>
 <body class="bg-gray-50">
     <!-- Inline script for hamburger menu visibility -->
@@ -641,14 +702,37 @@ $store_info = getStoreInfo();
         const sidebarToggle = document.getElementById('sidebar-toggle');
         const sidebar = document.getElementById('sidebar');
         const content = document.getElementById('content');
+        const sidebarClose = document.getElementById('sidebar-close');
         
         if (sidebarToggle && sidebar && content) {
+            // Check if mobile view
+            if (window.innerWidth < 1024) {
+                // Initially hide sidebar on mobile
+                sidebar.classList.add('-translate-x-full');
+            }
+            
             sidebarToggle.addEventListener('click', function() {
                 sidebar.classList.toggle('-translate-x-full');
-                content.classList.toggle('pl-0');
-                content.classList.toggle('pl-64');
             });
         }
+        
+        // Close sidebar when clicking the close button
+        if (sidebarClose && sidebar) {
+            sidebarClose.addEventListener('click', function() {
+                sidebar.classList.add('-translate-x-full');
+            });
+        }
+        
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            if (window.innerWidth < 1024 && 
+                sidebar && 
+                !sidebar.contains(event.target) && 
+                !sidebarToggle.contains(event.target) && 
+                !sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.add('-translate-x-full');
+            }
+        });
     });
     
     // Toggle submenu function

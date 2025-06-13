@@ -5,6 +5,27 @@ require_once 'config/database.php';
 require_once 'config/functions.php';
 require_once 'role_permission_check.php';
 
+// Additional style to ensure hamburger menu is visible
+echo '<style>
+    @media (max-width: 1023px) {
+        #sidebar-toggle {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            z-index: 10000 !important;
+            position: fixed !important;
+            top: 1rem !important;
+            left: 1rem !important;
+            background-color: #15803d !important;
+            color: white !important;
+        }
+        
+        #sidebar-toggle i {
+            display: inline-block !important;
+        }
+    }
+</style>';
+
 // Enforce view-only for crew
 if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'crew') {
     $permission = 'view';
@@ -21,11 +42,22 @@ if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'crew') {
             menuForm.style.display = "none";
         }
         
-        // Hide action buttons (Edit/Delete)
-        const actionButtons = document.querySelectorAll(".menu-card .flex.justify-end");
-        actionButtons.forEach(function(btnContainer) {
-            btnContainer.style.display = "none";
-        });
+        // Hide only Edit/Delete buttons but keep the detail view functionality
+        const editButtons = document.querySelectorAll(".menu-card a.bg-blue-500");
+        const deleteButtons = document.querySelectorAll(".menu-card button.bg-red-500");
+        
+        // Hide buttons separately to ensure proper hiding
+        if (editButtons) {
+            editButtons.forEach(function(btn) {
+                btn.style.display = "none";
+            });
+        }
+        
+        if (deleteButtons) {
+            deleteButtons.forEach(function(btn) {
+                btn.style.display = "none";
+            });
+        }
         
         // Hide add menu button
         const addMenuBtn = document.querySelector(".mb-4 .bg-green-500");
@@ -671,14 +703,14 @@ if ($table_check->num_rows > 0) {
 
 <!-- Modal Detail Menu -->
 <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-    <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full transform transition-all duration-300 scale-90 opacity-0" id="modalContent">
-        <div class="flex justify-between items-center p-6 border-b">
-            <h3 class="text-2xl font-bold text-gray-800" id="detailTitle">Detail Menu</h3>
+    <div class="bg-white rounded-xl shadow-2xl sm:max-w-md md:max-w-lg lg:max-w-2xl w-[95%] md:w-full mx-auto transform transition-all duration-300 scale-90 opacity-0" id="modalContent" style="max-height: 90vh; overflow-y: auto;">
+        <div class="flex justify-between items-center p-3 sm:p-4 border-b">
+            <h3 class="text-lg sm:text-xl font-bold text-gray-800" id="detailTitle">Detail Menu</h3>
             <button id="closeDetailBtn" class="text-gray-500 hover:text-gray-700 focus:outline-none transition-transform hover:rotate-90 duration-300">
                 <i class="fas fa-times text-xl"></i>
             </button>
         </div>
-        <div class="p-6" id="detailContent">
+        <div class="p-3 sm:p-4" id="detailContent">
             <!-- Content will be filled dynamically -->
         </div>
     </div>
@@ -870,26 +902,64 @@ document.addEventListener('DOMContentLoaded', function() {
                 const image = card.querySelector('img')?.src || '';
                 const description = card.querySelector('.text-gray-600')?.textContent || '';
                 
+                // Get bahan (ingredients) information - it's in the div with "Bahan:" label
+                let bahan = '';
+                const bahanElement = card.querySelector('div.mb-3:nth-child(2) p.text-sm.text-gray-600');
+                if (bahanElement) {
+                    bahan = bahanElement.textContent || '';
+                }
+                
+                // Get modal and harga data
+                const hargaModal = card.querySelector('.text-sm.font-semibold.text-gray-700')?.textContent || '';
+                const hargaJual = card.querySelector('.text-sm.font-semibold.text-green-600')?.textContent || '';
+                const keuntungan = card.querySelector('.text-sm.font-semibold.text-blue-600')?.textContent || '';
+                
                 const detailTitle = document.getElementById('detailTitle');
                 const detailContent = document.getElementById('detailContent');
                 
                 if (detailTitle) detailTitle.textContent = title;
                 if (detailContent) {
                     detailContent.innerHTML = `
-                        <div class="flex flex-col md:flex-row">
-                            <div class="w-full md:w-1/3 mb-4 md:mb-0 md:mr-6">
-                                <img src="${image}" class="w-full h-auto rounded-lg shadow-md" alt="${title}">
+                        <div class="flex flex-col">
+                            <div class="w-full mb-3">
+                                <img src="${image}" alt="${title}" class="w-full max-w-xs mx-auto rounded-lg shadow-md">
                             </div>
-                            <div class="w-full md:w-2/3">
-                                <div class="mb-4">
-                                    <p class="text-gray-600 mb-4">${description}</p>
-                                    <p class="text-xl font-semibold text-gray-800">${price}</p>
+                            <div class="w-full">
+                                <h4 class="text-base sm:text-lg font-semibold">Deskripsi</h4>
+                                <div class="mt-1 sm:mt-2">
+                                    <p class="text-sm sm:text-base text-gray-700"><span class="font-medium">Bahan:</span></p>
+                                    <div class="text-sm sm:text-base text-gray-700 mb-3">
+                                        <p class="font-medium mb-1">Bahan-bahan</p>
+                                        <p>${bahan}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-2 sm:mt-3">
+                                    <h4 class="text-base sm:text-lg font-semibold">Harga</h4>
+                                    <div class="grid grid-cols-2 gap-1 mt-1 sm:mt-2 text-sm sm:text-base">
+                                        <div>
+                                            <p class="text-gray-700">Harga Jual:</p>
+                                            <p class="text-gray-700">Harga Modal:</p>
+                                            <p class="text-gray-700">Keuntungan:</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-gray-900 font-medium">${hargaJual}</p>
+                                            <p class="text-gray-900 font-medium">${hargaModal}</p>
+                                            <p class="text-gray-900 font-medium">${keuntungan}</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     `;
                 }
                 
+                // Center modal
+                detailModal.style.display = 'flex';
+                detailModal.style.alignItems = 'center';
+                detailModal.style.justifyContent = 'center';
+                
+                // Show modal with animation
                 detailModal.classList.remove('hidden');
                 setTimeout(() => {
                     modalContent.classList.remove('scale-90', 'opacity-0');
@@ -900,31 +970,43 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Detail modal functionality
+        // Detail view functionality
+        const menuCards = document.querySelectorAll('.menu-card');
+        if (menuCards && menuCards.length > 0) {
+            menuCards.forEach(card => {
+                if (card) {
+                    // Add click handler to the entire card
+                    card.addEventListener('click', function(e) {
+                        // Skip if clicking on a button or link
+                        if (e.target.tagName === 'BUTTON' || 
+                            e.target.tagName === 'A' || 
+                            e.target.closest('button') || 
+                            e.target.closest('a')) {
+                            return;
+                        }
+                        
+                        // Show detail modal
+                        showDetailModal(this);
+                    });
+                    
+                    // Add specific click handler for the "Lihat Detail" button in the hover overlay
+                    const viewDetailBtn = card.querySelector('.group-hover\\:opacity-100 button');
+                    if (viewDetailBtn) {
+                        viewDetailBtn.addEventListener('click', function(e) {
+                            e.stopPropagation(); // Prevent card click from firing
+                            showDetailModal(card);
+                        });
+                    }
+                }
+            });
+        }
+        
+        // Close detail modal
+        const closeDetailBtn = document.getElementById('closeDetailBtn');
         const detailModal = document.getElementById('detailModal');
         const modalContent = document.getElementById('modalContent');
         
-        // Show detail modal when clicking on a card
-        try {
-            const cards = document.querySelectorAll('.menu-card');
-            if (cards && cards.length > 0) {
-                cards.forEach(card => {
-                    if (card) {
-                        card.addEventListener('click', function(e) {
-                            // Ignore clicks on buttons inside the card
-                            if (e.target.closest('a, button')) return;
-                            showDetailModal(this);
-                        });
-                    }
-                });
-            }
-        } catch (error) {
-            console.error('Error setting up card click handlers:', error);
-        }
-        
-        // Close detail modal when clicking the close button
-        const closeDetailBtn = document.getElementById('closeDetailBtn');
-        if (closeDetailBtn && modalContent && detailModal) {
+        if (closeDetailBtn && detailModal && modalContent) {
             closeDetailBtn.addEventListener('click', function() {
                 modalContent.classList.remove('scale-100', 'opacity-100');
                 modalContent.classList.add('scale-90', 'opacity-0');
@@ -934,7 +1016,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 300);
             });
             
-            // Close detail modal when clicking outside
+            // Close modal when clicking outside
             detailModal.addEventListener('click', function(e) {
                 if (e.target === this) {
                     closeDetailBtn.click();
@@ -1163,9 +1245,114 @@ document.addEventListener('DOMContentLoaded', function() {
         if (bahanContainer && bahanInput) {
             setTimeout(calculateHargaModal, 100); // Delay to ensure DOM is fully processed
         }
+
+        // Special fix for hamburger menu on mobile in menu_makanan.php
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        if (sidebarToggle) {
+            // Ensure hamburger menu is visible with high z-index
+            sidebarToggle.style.zIndex = "10000";
+            sidebarToggle.style.display = "flex";
+            sidebarToggle.style.visibility = "visible";
+            sidebarToggle.style.opacity = "1";
+            
+            // Check if in mobile view
+            if (window.innerWidth < 1024) {
+                // Add special styling to make hamburger menu easy to click
+                sidebarToggle.style.position = "fixed";
+                sidebarToggle.style.top = "1rem";
+                sidebarToggle.style.left = "1rem";
+                sidebarToggle.style.padding = "0.5rem";
+                sidebarToggle.style.backgroundColor = "white";
+                sidebarToggle.style.borderRadius = "0.375rem";
+                sidebarToggle.style.boxShadow = "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)";
+            }
+        }
+        
+        // Also make sure the sidebar itself has high z-index
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) {
+            sidebar.style.zIndex = "9999";
+            
+            // Ensure compatibility with new class names
+            if (window.innerWidth < 1024 && !sidebar.classList.contains('open')) {
+                sidebar.classList.add('-translate-x-full');
+            }
+        }
     } catch (error) {
         console.error('Global error in script:', error);
     }
 });
+
+// Konfirmasi hapus menu
+function confirmDelete(id, name) {
+    const modal = document.getElementById('deleteModal');
+    const modalContent = document.getElementById('deleteModalContent');
+    const menuToDelete = document.getElementById('menuToDelete');
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    
+    menuToDelete.textContent = name;
+    confirmDeleteBtn.href = `menu_makanan.php?delete=${id}`;
+    
+    modal.classList.remove('hidden');
+    
+    // Add animation
+    setTimeout(() => {
+        modalContent.classList.remove('scale-90', 'opacity-0');
+        modalContent.classList.add('scale-100', 'opacity-100');
+    }, 10);
+    
+    // Event listener untuk tombol batal
+    document.getElementById('cancelDeleteBtn').addEventListener('click', function() {
+        modalContent.classList.remove('scale-100', 'opacity-100');
+        modalContent.classList.add('scale-90', 'opacity-0');
+        
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    });
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+            document.getElementById('cancelDeleteBtn').click();
+        }
+    });
+}
+
+// Preview gambar sebelum upload
+document.getElementById('foto').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Jika sudah ada preview, hapus dulu
+            const existingPreview = document.querySelector('.preview-container');
+            if (existingPreview) {
+                existingPreview.remove();
+            }
+            
+            // Buat elemen preview baru
+            const previewContainer = document.createElement('div');
+            previewContainer.className = 'preview-container mt-2';
+            
+            const previewText = document.createElement('p');
+            previewText.className = 'text-sm text-gray-600 mb-1';
+            previewText.textContent = 'Preview:';
+            
+            const previewImg = document.createElement('img');
+            previewImg.src = e.target.result;
+            previewImg.className = 'w-32 h-32 object-cover rounded-md';
+            previewImg.alt = 'Preview';
+            
+            previewContainer.appendChild(previewText);
+            previewContainer.appendChild(previewImg);
+            
+            // Tambahkan ke dalam form setelah input file
+            document.getElementById('foto').parentNode.appendChild(previewContainer);
+        }
+        reader.readAsDataURL(file);
+    }
+});
 </script>
-</rewritten_file>
+
+<?php require_once 'includes/footer.php'; ?>
