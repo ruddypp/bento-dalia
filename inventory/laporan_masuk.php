@@ -1,62 +1,6 @@
 <?php
 $pageTitle = "Laporan Barang Masuk";
 require_once 'includes/header.php';
-require_once 'config/database.php';
-require_once 'config/functions.php';
-require_once 'role_permission_check.php';
-
-// Handle delete all data request
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_all_data']) && $_SESSION['user_role'] === 'admin') {
-    // Begin transaction
-    $conn->begin_transaction();
-    
-    try {
-        // First, get all id_masuk values from laporan_masuk_detail
-        $get_masuk_ids = "SELECT id_masuk FROM laporan_masuk_detail";
-        $masuk_ids_result = $conn->query($get_masuk_ids);
-        
-        $id_masuk_list = [];
-        while ($row = $masuk_ids_result->fetch_assoc()) {
-            $id_masuk_list[] = $row['id_masuk'];
-        }
-        
-        // Delete all records from laporan_masuk_detail first (due to foreign key constraints)
-        $conn->query("DELETE FROM laporan_masuk_detail");
-        
-        // Delete all records from laporan_masuk
-        $conn->query("DELETE FROM laporan_masuk");
-        
-        // Delete associated records from barang_masuk
-        if (!empty($id_masuk_list)) {
-            $id_list = implode(',', $id_masuk_list);
-            $conn->query("DELETE FROM barang_masuk WHERE id_masuk IN ($id_list)");
-        }
-        
-        // Commit transaction
-        $conn->commit();
-        
-        // Log activity
-        logActivity($_SESSION['user_id'], "Menghapus seluruh data laporan barang masuk");
-        
-        // Set success message
-        $_SESSION['alert'] = [
-            'type' => 'success',
-            'message' => 'Seluruh data laporan barang masuk berhasil dihapus'
-        ];
-    } catch (Exception $e) {
-        // Roll back on error
-        $conn->rollback();
-        
-        $_SESSION['alert'] = [
-            'type' => 'danger',
-            'message' => 'Gagal menghapus data: ' . $e->getMessage()
-        ];
-    }
-    
-    // Redirect to refresh page
-    header('Location: laporan_masuk.php');
-    exit;
-}
 
 // Handle report deletion
 if (isset($_GET['delete']) && !empty($_GET['delete'])) {
@@ -108,8 +52,21 @@ if (isset($_GET['delete']) && !empty($_GET['delete'])) {
         $main_stmt->execute();
         $main_stmt->close();
         
-        // We do NOT delete barang_masuk entries or adjust stock to ensure stock remains accurate
-        // This is intentional - deleting the report should not affect inventory levels
+        // Optionally, delete associated barang_masuk entries
+        if (!empty($id_masuk_list)) {
+            foreach ($id_masuk_list as $id_masuk) {
+                $masuk_query = "DELETE FROM barang_masuk WHERE id_masuk = ?";
+                $masuk_stmt = $conn->prepare($masuk_query);
+                
+                if (!$masuk_stmt) {
+                    continue; // Skip if can't prepare
+                }
+                
+                $masuk_stmt->bind_param("i", $id_masuk);
+                $masuk_stmt->execute();
+                $masuk_stmt->close();
+            }
+        }
         
         // Commit transaction
         $conn->commit();
@@ -153,17 +110,6 @@ if (isset($_GET['edit']) && !empty($_GET['edit'])) {
 
 // Handle form submission for edit
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_laporan'])) {
-    // Check if user has permission to edit
-    if ($_SESSION['user_role'] === 'crew') {
-        // Redirect with error message
-        $_SESSION['alert'] = [
-            'type' => 'danger',
-            'message' => 'Anda tidak memiliki akses untuk mengubah laporan'
-        ];
-        header('Location: laporan_masuk.php');
-        exit;
-    }
-    
     $id_laporan = $_POST['id_laporan'] ?? '';
     $tanggal_laporan = $_POST['tanggal_laporan'] ?? date('Y-m-d');
     $id_masuk = $_POST['id_masuk'] ?? '';
@@ -172,7 +118,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_laporan'])) {
     $satuan = $_POST['satuan'] ?? '';
     $supplier = $_POST['supplier'] ?? '';
     $status = $_POST['status'] ?? 'pending'; // Get status from edit form
-    $periode = (int)($_POST['periode'] ?? 1); // Get periode from edit form
     $errors = [];
     
     // Validate required fields
@@ -196,10 +141,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_laporan'])) {
         $errors[] = "Supplier wajib diisi";
     }
     
-    if ($periode < 1 || $periode > 4) {
-        $errors[] = "Periode harus antara 1-4";
-    }
-    
     // If no errors, update the report
     if (empty($errors)) {
         $user_id = $_SESSION['user_id'];
@@ -209,13 +150,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_laporan'])) {
         
         try {
             // Update the main report including status
-            $query = "UPDATE laporan_masuk SET tanggal_laporan = ?, status = ?, periode = ? WHERE id_laporan_masuk = ?";
+            $query = "UPDATE laporan_masuk SET tanggal_laporan = ?, status = ? WHERE id_laporan_masuk = ?";
             
             $stmt = $conn->prepare($query);
             if (!$stmt) {
                 throw new Exception("Error in query: " . $conn->error);
             }
-            $stmt->bind_param("ssii", $tanggal_laporan, $status, $periode, $id_laporan);
+            $stmt->bind_param("ssi", $tanggal_laporan, $status, $id_laporan);
             $stmt->execute();
             
             // Find a matching barang ID based on the name provided
@@ -259,14 +200,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_laporan'])) {
             $supplier_stmt->close();
             
             // Update barang_masuk
-            $masuk_query = "UPDATE barang_masuk SET id_barang = ?, qty_masuk = ?, tanggal_masuk = ?, id_supplier = ?, periode = ? WHERE id_masuk = ?";
+            $masuk_query = "UPDATE barang_masuk SET id_barang = ?, qty_masuk = ?, tanggal_masuk = ?, id_supplier = ? WHERE id_masuk = ?";
             
             $masuk_stmt = $conn->prepare($masuk_query);
             if (!$masuk_stmt) {
                 throw new Exception("Error preparing barang_masuk update query: " . $conn->error);
             }
             
-            $masuk_stmt->bind_param("idsiii", $barang_id, $jumlah, $tanggal_laporan, $supplier_id, $periode, $id_masuk);
+            $masuk_stmt->bind_param("idsii", $barang_id, $jumlah, $tanggal_laporan, $supplier_id, $id_masuk);
             $masuk_stmt->execute();
             
             // Commit transaction
@@ -294,17 +235,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_laporan'])) {
 
 // Handle new report form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['buat_laporan'])) {
-    // Check if user has permission to add new reports
-    if ($_SESSION['user_role'] === 'crew') {
-        // Redirect with error message
-        $_SESSION['alert'] = [
-            'type' => 'danger',
-            'message' => 'Anda tidak memiliki akses untuk menambah laporan'
-        ];
-        header('Location: laporan_masuk.php');
-        exit;
-    }
-    
     // Validate form data
     $tanggal_laporan = $_POST['tanggal_laporan'] ?? date('Y-m-d');
     $nama_barang = $_POST['nama_barang'] ?? '';
@@ -312,7 +242,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['buat_laporan'])) {
     $satuan = $_POST['satuan'] ?? '';
     $supplier = $_POST['supplier'] ?? '';
     $status = $_POST['status'] ?? 'pending'; // Get status from form
-    $periode = (int)($_POST['periode'] ?? 1); // Get periode from form
     $errors = [];
     
     // Validate required fields
@@ -336,10 +265,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['buat_laporan'])) {
         $errors[] = "Supplier wajib diisi";
     }
     
-    if ($periode < 1 || $periode > 4) {
-        $errors[] = "Periode harus antara 1-4";
-    }
-    
     // If no errors, save the report
     if (empty($errors)) {
         $user_id = $_SESSION['user_id'];
@@ -359,7 +284,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['buat_laporan'])) {
                   `created_by` int(11) DEFAULT NULL,
                   `created_at` datetime DEFAULT NULL,
                   `status` varchar(50) DEFAULT 'pending',
-                  `periode` int(11) DEFAULT NULL,
                   PRIMARY KEY (`id_laporan_masuk`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;";
                 
@@ -374,16 +298,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['buat_laporan'])) {
                     $add_status = "ALTER TABLE `laporan_masuk` ADD COLUMN `status` varchar(50) DEFAULT 'pending'";
                     if (!$conn->query($add_status)) {
                         throw new Exception("Error adding status column: " . $conn->error);
-                    }
-                }
-                
-                // Check if periode column exists
-                $check_periode = $conn->query("SHOW COLUMNS FROM `laporan_masuk` LIKE 'periode'");
-                if ($check_periode->num_rows == 0) {
-                    // Add the periode column
-                    $add_periode = "ALTER TABLE `laporan_masuk` ADD COLUMN `periode` int(11) DEFAULT NULL";
-                    if (!$conn->query($add_periode)) {
-                        throw new Exception("Error adding periode column: " . $conn->error);
                     }
                 }
             }
@@ -410,14 +324,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['buat_laporan'])) {
             }
             
             // Insert the main report with all columns from the check_tables.php output
-            $query = "INSERT INTO laporan_masuk (tanggal_laporan, created_by, created_at, status, periode) 
-                      VALUES (?, ?, NOW(), ?, ?)";
+            $query = "INSERT INTO laporan_masuk (tanggal_laporan, created_by, created_at, status) 
+                      VALUES (?, ?, NOW(), ?)";
             
             $stmt = $conn->prepare($query);
             if (!$stmt) {
                 throw new Exception("Error in query: " . $conn->error);
             }
-            $stmt->bind_param("sisi", $tanggal_laporan, $user_id, $status, $periode);
+            $stmt->bind_param("sis", $tanggal_laporan, $user_id, $status);
             $stmt->execute();
             
             $id_laporan = $conn->insert_id;
@@ -464,17 +378,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['buat_laporan'])) {
             $supplier_stmt->close();
             
             // Create an entry in barang_masuk table
-            $masuk_query = "INSERT INTO barang_masuk (id_barang, qty_masuk, tanggal_masuk, id_supplier, id_user, periode) 
-                          VALUES (?, ?, ?, ?, ?, ?)";
-
+            $masuk_query = "INSERT INTO barang_masuk (id_barang, qty_masuk, tanggal_masuk, id_supplier, id_user) 
+                          VALUES (?, ?, ?, ?, ?)";
+            
             $masuk_stmt = $conn->prepare($masuk_query);
             if (!$masuk_stmt) {
                 throw new Exception("Error preparing barang_masuk query: " . $conn->error);
             }
-
-            $masuk_stmt->bind_param("idsiii", $barang_id, $jumlah, $tanggal_laporan, $supplier_id, $user_id, $periode);
+            
+            $masuk_stmt->bind_param("idsii", $barang_id, $jumlah, $tanggal_laporan, $supplier_id, $user_id);
             $masuk_stmt->execute();
-
+            
             $id_masuk = $conn->insert_id;
             
             // Now insert into laporan_masuk_detail
@@ -520,291 +434,109 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['buat_laporan'])) {
 }
 
 // Get all laporan masuk
-$query = "SELECT lm.*, 
-          u.nama_lengkap as created_by_name,
-          (SELECT COUNT(*) FROM laporan_masuk_detail WHERE id_laporan = lm.id_laporan_masuk) as detail_count
-          FROM laporan_masuk lm
-          LEFT JOIN users u ON lm.created_by = u.id_user
-          ORDER BY lm.tanggal_laporan DESC";
-$laporan_list = mysqli_query($conn, $query);
+$laporan_list = getAllLaporanMasuk($conn);
 
-// Pagination settings
-$records_per_page = isset($_GET['records_per_page']) ? (int)$_GET['records_per_page'] : 10;
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$offset = ($page - 1) * $records_per_page;
-
-// Get all days with laporan masuk with pagination
-$all_days = getAllDaysWithLaporan($conn, $records_per_page, $offset);
-
-// Get total records for pagination
-$total_records = getTotalDaysWithLaporan($conn);
-$total_pages = ceil($total_records / $records_per_page);
-
-// Records per page options for dropdown
-$records_per_page_options = [10, 25, 50, 100];
-
-// Function to get detail count and format status
+// Formating functions for reusability
 function formatStatus($detailCount) {
-    if ($detailCount > 0) {
-        return '<span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Disetujui</span>';
-    } else {
-        return '<span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">Draft</span>';
-    }
+    $status = $detailCount > 0 ? 'Lengkap' : 'Belum Lengkap';
+    $statusClass = $status == 'Lengkap' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
+    return "<span class=\"$statusClass text-xs font-medium px-2.5 py-0.5 rounded-full\">$status</span>";
 }
 
-// Function to get laporan masuk details for edit
+// Function to get laporan data for editing
 function getLaporanMasukForEdit($conn, $id_laporan) {
-    $query = "SELECT lm.*, 
-              u.nama_lengkap as created_by_name
-              FROM laporan_masuk lm
-              LEFT JOIN users u ON lm.created_by = u.id_user
-              WHERE lm.id_laporan_masuk = ?";
-    $stmt = mysqli_prepare($conn, $query);
-    mysqli_stmt_bind_param($stmt, "i", $id_laporan);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-    $laporan = mysqli_fetch_assoc($result);
-    
-    if (!$laporan) {
+    try {
+        // Check if the laporan exists first
+        $check_query = "SELECT * FROM laporan_masuk WHERE id_laporan_masuk = ?";
+        $check_stmt = $conn->prepare($check_query);
+        if (!$check_stmt) {
+            error_log("Check prepare failed: " . $conn->error);
             return null;
         }
         
-    // Get all detail items
-    $detail_query = "SELECT lmd.*, 
-                    bm.id_barang, bm.qty_masuk, bm.tanggal_masuk, bm.harga_satuan, bm.lokasi, bm.periode,
-                    b.nama_barang, b.satuan,
-                    s.id_supplier, s.nama_supplier
+        $check_stmt->bind_param("i", $id_laporan);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
+        
+        if ($check_result->num_rows == 0) {
+            error_log("No laporan found with ID: " . $id_laporan);
+            $check_stmt->close();
+            return null;
+        }
+        
+        $laporan = $check_result->fetch_assoc();
+        $check_stmt->close();
+        
+        // Now get the detail
+        $query = "SELECT lmd.id_detail, lmd.id_laporan, lmd.id_masuk, 
+                        bm.qty_masuk, bm.tanggal_masuk, b.nama_barang, b.satuan, 
+                        s.nama_supplier, s.id_supplier, b.id_barang 
                 FROM laporan_masuk_detail lmd
                 JOIN barang_masuk bm ON lmd.id_masuk = bm.id_masuk
                 JOIN barang b ON bm.id_barang = b.id_barang
-                    LEFT JOIN supplier s ON b.id_supplier = s.id_supplier
+                JOIN supplier s ON bm.id_supplier = s.id_supplier
                 WHERE lmd.id_laporan = ?
-                    ORDER BY bm.tanggal_masuk DESC";
-    $detail_stmt = mysqli_prepare($conn, $detail_query);
-    mysqli_stmt_bind_param($detail_stmt, "i", $id_laporan);
-    mysqli_stmt_execute($detail_stmt);
-    $detail_result = mysqli_stmt_get_result($detail_stmt);
-    
-    $details = [];
-    while ($row = mysqli_fetch_assoc($detail_result)) {
-        $details[] = $row;
-    }
-    
-    $laporan['details'] = $details;
-    
+                LIMIT 1";
+        
+        $stmt = $conn->prepare($query);
+        if (!$stmt) {
+            error_log("Detail prepare failed: " . $conn->error);
+            return $laporan; // Return just the main laporan data
+        }
+        
+        $stmt->bind_param("i", $id_laporan);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows > 0) {
+            $detail = $result->fetch_assoc();
+            $stmt->close();
+            // Merge laporan and detail data
+            return array_merge($laporan, $detail);
+        }
+        
+        $stmt->close();
         return $laporan;
+    } catch (Exception $e) {
+        error_log("Error in getLaporanMasukForEdit: " . $e->getMessage());
+        return null;
+    }
 }
 
-// Function to get first detail item for display
+// Function to get first detail item for a laporan
 function getFirstLaporanMasukDetail($conn, $id_laporan) {
-    $query = "SELECT lmd.*, 
-              bm.id_barang, bm.qty_masuk, bm.tanggal_masuk, bm.harga_satuan,
-              b.nama_barang, b.satuan,
-              s.nama_supplier
+    try {
+        // From check_tables.php we see we need to join with barang_masuk to get item details
+        $query = "SELECT bm.*, b.nama_barang, b.satuan, s.nama_supplier 
                 FROM laporan_masuk_detail lmd
                 JOIN barang_masuk bm ON lmd.id_masuk = bm.id_masuk
                 JOIN barang b ON bm.id_barang = b.id_barang
-              LEFT JOIN supplier s ON b.id_supplier = s.id_supplier
+                JOIN supplier s ON bm.id_supplier = s.id_supplier
                 WHERE lmd.id_laporan = ? 
-              ORDER BY bm.tanggal_masuk DESC
-              LIMIT 1";
-    $stmt = mysqli_prepare($conn, $query);
-    mysqli_stmt_bind_param($stmt, "i", $id_laporan);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-    
-    return mysqli_fetch_assoc($result);
-}
-
-// Function to get daily summary of incoming items
-function getDailySummary($conn, $date, $periode) {
-    $query = "SELECT 
-                DATE(bm.tanggal_masuk) as tanggal,
-                COUNT(DISTINCT bm.id_masuk) as total_transaksi,
-                SUM(bm.qty_masuk) as total_qty,
-                COUNT(DISTINCT bm.id_barang) as total_jenis_barang,
-                p.periode
-              FROM 
-                barang_masuk bm
-              LEFT JOIN 
-                laporan_masuk_detail lmd ON bm.id_masuk = lmd.id_masuk
-              LEFT JOIN 
-                laporan_masuk p ON lmd.id_laporan = p.id_laporan_masuk
-              WHERE 
-                DATE(bm.tanggal_masuk) = ? AND bm.periode = ?
-              GROUP BY 
-                DATE(bm.tanggal_masuk), p.periode";
+                ORDER BY lmd.id_detail LIMIT 1";
                 
-    $stmt = $conn->prepare($query);
-    if (!$stmt) {
-        return [
-            'total_transaksi' => 0,
-            'total_qty' => 0,
-            'total_jenis_barang' => 0
-        ];
+        $stmt = $conn->prepare($query);
+        if (!$stmt) {
+            error_log("Prepare failed in getFirstLaporanMasukDetail: " . $conn->error);
+            return null;
+        }
+        
+        $stmt->bind_param("i", $id_laporan);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows > 0) {
+            $detail = $result->fetch_assoc();
+            $stmt->close();
+            return $detail;
+        }
+        
+        $stmt->close();
+        return null;
+    } catch (Exception $e) {
+        error_log("Error in getFirstLaporanMasukDetail: " . $e->getMessage());
+        return null;
     }
-    
-    $stmt->bind_param("si", $date, $periode);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result && $result->num_rows > 0) {
-        return $result->fetch_assoc();
-    } else {
-        return [
-            'total_transaksi' => 0,
-            'total_qty' => 0,
-            'total_jenis_barang' => 0
-        ];
-    }
-}
-
-// Function to get all days with laporan masuk with pagination
-function getAllDaysWithLaporan($conn, $limit = null, $offset = null) {
-    $query = "SELECT 
-              DATE(bm.tanggal_masuk) as tanggal,
-              bm.periode,
-              s.id_supplier,
-              s.nama_supplier,
-              COUNT(DISTINCT bm.id_masuk) as entry_count,
-              MAX(lm.status) as status
-              FROM barang_masuk bm
-              JOIN laporan_masuk_detail lmd ON bm.id_masuk = lmd.id_masuk
-              JOIN laporan_masuk lm ON lmd.id_laporan = lm.id_laporan_masuk
-              JOIN barang b ON bm.id_barang = b.id_barang
-              JOIN supplier s ON bm.id_supplier = s.id_supplier
-              GROUP BY DATE(bm.tanggal_masuk), bm.periode, s.id_supplier
-              ORDER BY DATE(bm.tanggal_masuk) DESC, s.nama_supplier ASC";
-    
-    // Add limit and offset for pagination if provided
-    if ($limit !== null && $offset !== null) {
-        $query .= " LIMIT $offset, $limit";
-    }
-    
-    $result = mysqli_query($conn, $query);
-    
-    $days = [];
-    while ($row = mysqli_fetch_assoc($result)) {
-        $days[] = $row;
-    }
-    
-    return $days;
-}
-
-// Function to get total count of days with laporan for pagination
-function getTotalDaysWithLaporan($conn) {
-    $query = "SELECT COUNT(*) as total FROM (
-              SELECT 
-              DATE(bm.tanggal_masuk) as tanggal,
-              bm.periode,
-              s.id_supplier
-              FROM barang_masuk bm
-              JOIN laporan_masuk_detail lmd ON bm.id_masuk = lmd.id_masuk
-              JOIN laporan_masuk lm ON lmd.id_laporan = lm.id_laporan_masuk
-              JOIN barang b ON bm.id_barang = b.id_barang
-              JOIN supplier s ON bm.id_supplier = s.id_supplier
-              GROUP BY DATE(bm.tanggal_masuk), bm.periode, s.id_supplier
-              ) as subquery";
-              
-    $result = mysqli_query($conn, $query);
-    $row = mysqli_fetch_assoc($result);
-    
-    return $row['total'];
-}
-
-// Function to get daily supplier summary
-function getDailySupplierSummary($conn, $date, $periode, $supplier_id) {
-    $query = "SELECT 
-                DATE(bm.tanggal_masuk) as tanggal,
-                COUNT(DISTINCT bm.id_masuk) as total_transaksi,
-                SUM(bm.qty_masuk) as total_qty,
-                COUNT(DISTINCT bm.id_barang) as total_jenis_barang,
-                s.nama_supplier,
-                bm.periode,
-                COALESCE(p.status, 'Pending') as status
-              FROM 
-                barang_masuk bm
-              JOIN 
-                supplier s ON bm.id_supplier = s.id_supplier
-              LEFT JOIN 
-                laporan_masuk_detail lmd ON bm.id_masuk = lmd.id_masuk
-              LEFT JOIN 
-                laporan_masuk p ON lmd.id_laporan = p.id_laporan_masuk
-              WHERE 
-                DATE(bm.tanggal_masuk) = ? AND bm.periode = ? AND bm.id_supplier = ?
-              GROUP BY 
-                DATE(bm.tanggal_masuk), bm.periode, s.id_supplier, p.status";
-                
-    $stmt = $conn->prepare($query);
-    if (!$stmt) {
-        return [
-            'total_transaksi' => 0,
-            'total_qty' => 0,
-            'total_jenis_barang' => 0,
-            'nama_supplier' => 'Unknown',
-            'status' => 'Pending'
-        ];
-    }
-    
-    $stmt->bind_param("sii", $date, $periode, $supplier_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result && $result->num_rows > 0) {
-        return $result->fetch_assoc();
-    } else {
-        return [
-            'total_transaksi' => 0,
-            'total_qty' => 0,
-            'total_jenis_barang' => 0,
-            'nama_supplier' => 'Unknown',
-            'status' => 'Pending'
-        ];
-    }
-}
-
-// Function to get all supplier items received on a specific day
-function getDailySupplierItems($conn, $date, $periode, $supplier_id) {
-    $query = "SELECT 
-                b.nama_barang,
-                b.satuan,
-                SUM(bm.qty_masuk) as total_qty,
-                AVG(bm.harga_satuan) as avg_harga,
-                CASE WHEN bm.lokasi = '' OR bm.lokasi IS NULL THEN '-' ELSE bm.lokasi END as lokasi,
-                s.nama_supplier,
-                lm.status
-              FROM 
-                barang_masuk bm
-              JOIN 
-                barang b ON bm.id_barang = b.id_barang
-              JOIN 
-                supplier s ON bm.id_supplier = s.id_supplier
-              LEFT JOIN
-                laporan_masuk_detail lmd ON bm.id_masuk = lmd.id_masuk
-              LEFT JOIN
-                laporan_masuk lm ON lmd.id_laporan = lm.id_laporan_masuk
-              WHERE 
-                DATE(bm.tanggal_masuk) = ? AND bm.periode = ? AND bm.id_supplier = ?
-              GROUP BY 
-                b.id_barang, bm.lokasi, lm.status
-              ORDER BY 
-                b.nama_barang ASC";
-                
-    $stmt = $conn->prepare($query);
-    if (!$stmt) {
-        return [];
-    }
-    
-    $stmt->bind_param("sii", $date, $periode, $supplier_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    $items = [];
-    while ($row = $result->fetch_assoc()) {
-        $items[] = $row;
-    }
-    
-    return $items;
 }
 ?>
 
@@ -829,27 +561,18 @@ function getDailySupplierItems($conn, $date, $periode, $supplier_id) {
         </nav>
         
         <div class="flex space-x-2">
-            <?php if ($_SESSION['user_role'] !== 'crew'): ?>
             <a href="laporan_barang_masuk.php" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg shadow-md transition duration-200 flex items-center">
                 <i class="fas fa-plus mr-2"></i> Buat Laporan Baru
             </a>
-            <?php endif; ?>
             
             <button id="printAllBtn" onclick="printAllReports()" class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg shadow-md transition duration-200 flex items-center">
                 <i class="fas fa-print mr-2"></i> Cetak Semua
             </button>
-            
-            <?php if ($_SESSION['user_role'] === 'admin'): ?>
-            <button id="deleteAllBtn" onclick="confirmDeleteAll()" class="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg shadow-md transition duration-200 flex items-center">
-                <i class="fas fa-trash-alt mr-2"></i> Hapus Semua Data
-            </button>
-            <?php endif; ?>
         </div>
     </div>
     
     <!-- New Report Form (Initially Hidden) -->
     <div id="addReportForm" class="bg-white rounded-lg shadow-md overflow-hidden mb-6" style="display: <?= ($edit_mode || !empty($errors)) ? 'block' : 'none' ?>;">
-        <?php if ($_SESSION['user_role'] !== 'crew'): ?>
         <div class="bg-gray-50 py-3 px-4 border-b border-gray-200">
             <h3 class="text-lg font-semibold text-gray-700">
                 <?= $edit_mode ? 'Edit Laporan Barang Masuk' : 'Form Laporan Barang Masuk Baru' ?>
@@ -945,16 +668,6 @@ function getDailySupplierItems($conn, $date, $periode, $supplier_id) {
                             <option value="rejected" <?= ($edit_mode && $edit_data['status'] == 'rejected') ? 'selected' : '' ?>>Rejected</option>
                         </select>
                     </div>
-                    
-                    <div>
-                        <label for="periode" class="block text-sm font-medium text-gray-700 mb-1">Periode</label>
-                        <select id="periode" name="periode" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                            <option value="1" <?= ($edit_mode && isset($edit_data['periode']) && $edit_data['periode'] == 1) ? 'selected' : '' ?>>Periode 1</option>
-                            <option value="2" <?= ($edit_mode && isset($edit_data['periode']) && $edit_data['periode'] == 2) ? 'selected' : '' ?>>Periode 2</option>
-                            <option value="3" <?= ($edit_mode && isset($edit_data['periode']) && $edit_data['periode'] == 3) ? 'selected' : '' ?>>Periode 3</option>
-                            <option value="4" <?= ($edit_mode && isset($edit_data['periode']) && $edit_data['periode'] == 4) ? 'selected' : '' ?>>Periode 4</option>
-                        </select>
-                    </div>
                 </div>
                 
                 <div class="flex justify-end mt-6 space-x-2">
@@ -967,23 +680,6 @@ function getDailySupplierItems($conn, $date, $periode, $supplier_id) {
                 </div>
             </form>
         </div>
-        <?php else: ?>
-        <div class="bg-gray-50 py-3 px-4 border-b border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-700">Akses Terbatas</h3>
-        </div>
-        <div class="p-4">
-            <div class="bg-yellow-100 border-yellow-500 text-yellow-700 border-l-4 p-4 mb-4 rounded-md">
-                <div class="flex items-center">
-                    <div class="py-1">
-                        <i class="fas fa-exclamation-triangle mr-2"></i>
-                    </div>
-                    <div>
-                        <p class="font-medium">Anda tidak memiliki akses untuk menambah atau mengubah laporan.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <?php endif; ?>
     </div>
     
     <?php if (isset($_SESSION['alert'])): ?>
@@ -1013,6 +709,9 @@ function getDailySupplierItems($conn, $date, $periode, $supplier_id) {
                         <tr>
                             <th class="px-4 py-3">No</th>
                             <th class="px-4 py-3">Tanggal Masuk</th>
+                            <th class="px-4 py-3">Nama Barang</th>
+                            <th class="px-4 py-3">Jumlah</th>
+                            <th class="px-4 py-3">Satuan</th>
                             <th class="px-4 py-3">Supplier</th>
                             <th class="px-4 py-3">Status</th>
                             <th class="px-4 py-3" width="180">Aksi</th>
@@ -1021,27 +720,32 @@ function getDailySupplierItems($conn, $date, $periode, $supplier_id) {
                     <tbody>
                         <?php 
                         $no = 1;
-                        foreach ($all_days as $day): 
-                            // Get supplier summary
-                            $summary = getDailySupplierSummary($conn, $day['tanggal'], $day['periode'], $day['id_supplier']);
+                        foreach($laporan_list as $laporan): 
+                            // Get status from detail count
+                            $detailCount = getLaporanMasukDetailCount($conn, $laporan['id_laporan_masuk']);
+                            
+                            // Get first item detail for display in table
+                            $firstItem = getFirstLaporanMasukDetail($conn, $laporan['id_laporan_masuk']);
                             
                             // Get status badge color based on status
                             $statusBadgeClass = 'bg-yellow-100 text-yellow-800'; // Default for 'pending'
-                            $statusText = $summary['status'] ?? 'pending';
+                            $statusText = $laporan['status'] ?? 'pending';
                             
                             if ($statusText == 'diproses') {
                                 $statusBadgeClass = 'bg-blue-100 text-blue-800';
-                            } else if ($statusText == 'selesai' || $statusText == 'approved') {
+                            } else if ($statusText == 'selesai') {
                                 $statusBadgeClass = 'bg-green-100 text-green-800';
-                                $statusText = 'selesai';
                             } else if ($statusText == 'dibatalkan') {
                                 $statusBadgeClass = 'bg-red-100 text-red-800';
                             }
                         ?>
                         <tr class="bg-white border-b hover:bg-gray-50">
                             <td class="px-4 py-3"><?= $no++ ?></td>
-                            <td class="px-4 py-3"><?= date('d F Y', strtotime($day['tanggal'])) ?></td>
-                            <td class="px-4 py-3"><?= $day['nama_supplier'] ?></td>
+                            <td class="px-4 py-3"><?= date('d F Y', strtotime($laporan['tanggal_laporan'])) ?></td>
+                            <td class="px-4 py-3"><?= $firstItem ? htmlspecialchars($firstItem['nama_barang']) : '-' ?></td>
+                            <td class="px-4 py-3"><?= $firstItem ? htmlspecialchars($firstItem['qty_masuk']) : '-' ?></td>
+                            <td class="px-4 py-3"><?= $firstItem ? htmlspecialchars($firstItem['satuan']) : '-' ?></td>
+                            <td class="px-4 py-3"><?= $firstItem ? htmlspecialchars($firstItem['nama_supplier']) : '-' ?></td>
                             <td class="px-4 py-3">
                                 <span class="<?= $statusBadgeClass ?> text-xs font-medium px-2.5 py-0.5 rounded-full">
                                     <?= ucfirst($statusText) ?>
@@ -1049,20 +753,26 @@ function getDailySupplierItems($conn, $date, $periode, $supplier_id) {
                             </td>
                             <td class="px-4 py-3">
                                 <div class="flex gap-1">
-                                    <button onclick="viewDetail('<?= $day['tanggal'] ?>', <?= $day['periode'] ?>, <?= $day['id_supplier'] ?>)" class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-md" title="Lihat Detail">
+                                    <button onclick="viewDetail(<?= $laporan['id_laporan_masuk'] ?>)" class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-md" title="Lihat Detail">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button onclick="printReport('<?= $day['tanggal'] ?>', <?= $day['periode'] ?>, <?= $day['id_supplier'] ?>)" class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-md" title="Cetak Laporan">
+                                    <a href="laporan_masuk.php?edit=<?= $laporan['id_laporan_masuk'] ?>" class="bg-yellow-600 hover:bg-yellow-700 text-white p-2 rounded-md" title="Edit Laporan">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button onclick="printReport(<?= $laporan['id_laporan_masuk'] ?>)" class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-md" title="Cetak Laporan">
                                         <i class="fas fa-print"></i>
                                     </button>
+                                    <a href="laporan_masuk.php?delete=<?= $laporan['id_laporan_masuk'] ?>" onclick="return confirm('Yakin ingin menghapus laporan ini?')" class="bg-red-600 hover:bg-red-700 text-white p-2 rounded-md" title="Hapus Laporan">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
                                 </div>
                             </td>
                         </tr>
                         <?php endforeach; ?>
                         
-                        <?php if(count($all_days) == 0): ?>
+                        <?php if(empty($laporan_list)): ?>
                         <tr class="bg-white border-b">
-                            <td colspan="5" class="px-4 py-3 text-center text-gray-500">
+                            <td colspan="8" class="px-4 py-3 text-center text-gray-500">
                                 Belum ada laporan yang dibuat
                             </td>
                         </tr>
@@ -1070,87 +780,21 @@ function getDailySupplierItems($conn, $date, $periode, $supplier_id) {
                     </tbody>
                 </table>
             </div>
-            
-            <!-- Pagination Controls -->
-            <div class="flex flex-col md:flex-row justify-between items-center mt-4 px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
-                <div class="flex items-center mb-4 md:mb-0">
-                    <span class="text-sm text-gray-700">
-                        Menampilkan
-                        <span class="font-medium"><?= min(($page - 1) * $records_per_page + 1, $total_records) ?></span>
-                        sampai
-                        <span class="font-medium"><?= min($page * $records_per_page, $total_records) ?></span>
-                        dari
-                        <span class="font-medium"><?= $total_records ?></span>
-                        data
-                    </span>
-                </div>
-                
-                <div class="flex items-center space-x-2">
-                    <!-- Records per page dropdown -->
-                    <div class="flex items-center">
-                        <label for="records_per_page" class="mr-2 text-sm text-gray-600">Tampilkan:</label>
-                        <select id="records_per_page" name="records_per_page" onchange="changeRecordsPerPage(this.value)" 
-                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2">
-                            <?php foreach ($records_per_page_options as $option): ?>
-                            <option value="<?= $option ?>" <?= $records_per_page == $option ? 'selected' : '' ?>><?= $option ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    
-                    <!-- Pagination buttons -->
-                    <div class="flex items-center space-x-2">
-                        <a href="?page=1&records_per_page=<?= $records_per_page ?>" 
-                           class="<?= $page <= 1 ? 'opacity-50 cursor-not-allowed' : '' ?> px-3 py-1 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
-                            <i class="fas fa-angle-double-left"></i>
-                        </a>
-                        
-                        <a href="?page=<?= max($page - 1, 1) ?>&records_per_page=<?= $records_per_page ?>" 
-                           class="<?= $page <= 1 ? 'opacity-50 cursor-not-allowed' : '' ?> px-3 py-1 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
-                            <i class="fas fa-angle-left"></i>
-                        </a>
-                        
-                        <?php
-                        $start_page = max(1, min($page - 2, $total_pages - 4));
-                        $end_page = min($total_pages, max(5, $page + 2));
-                        
-                        for ($i = $start_page; $i <= $end_page; $i++):
-                        ?>
-                        <a href="?page=<?= $i ?>&records_per_page=<?= $records_per_page ?>" 
-                           class="<?= $page == $i ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50' ?> px-3 py-1 border rounded-md text-sm font-medium">
-                            <?= $i ?>
-                        </a>
-                        <?php endfor; ?>
-                        
-                        <a href="?page=<?= min($page + 1, $total_pages) ?>&records_per_page=<?= $records_per_page ?>" 
-                           class="<?= $page >= $total_pages ? 'opacity-50 cursor-not-allowed' : '' ?> px-3 py-1 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
-                            <i class="fas fa-angle-right"></i>
-                        </a>
-                        
-                        <a href="?page=<?= $total_pages ?>&records_per_page=<?= $records_per_page ?>" 
-                           class="<?= $page >= $total_pages ? 'opacity-50 cursor-not-allowed' : '' ?> px-3 py-1 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
-                            <i class="fas fa-angle-double-right"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
     
     <!-- Detail Modal -->
-    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden transition-opacity duration-300">
-        <div id="detailModalContent" class="bg-white rounded-lg shadow-xl w-full max-w-3xl transform transition-transform duration-300 scale-95 opacity-0">
-            <div class="bg-blue-50 py-4 px-5 border-b border-blue-100 flex justify-between items-center rounded-t-lg">
-                <h3 class="text-lg font-semibold text-blue-700 flex items-center">
-                    <i class="fas fa-clipboard-list text-blue-600 mr-3"></i>
-                    Detail Laporan Barang Masuk
-                </h3>
-                <button onclick="closeDetailModal()" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-3xl">
+            <div class="bg-gray-50 py-3 px-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-lg font-semibold text-gray-700">Detail Laporan Barang Masuk</h3>
+                <button onclick="closeDetailModal()" class="text-gray-500 hover:text-gray-700">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="p-5" id="detailContent">
+            <div class="p-4" id="detailContent">
                 <!-- Content will be loaded here -->
-                <div class="flex justify-center py-8">
+                <div class="flex justify-center">
                     <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                 </div>
             </div>
@@ -1159,65 +803,6 @@ function getDailySupplierItems($conn, $date, $periode, $supplier_id) {
     
     <!-- Print iframe (hidden) -->
     <iframe id="printFrame" style="display:none;"></iframe>
-    
-    <!-- Delete All Confirmation Modal -->
-    <div id="deleteAllModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden transition-opacity duration-300">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-md transform transition-transform duration-300 scale-95 opacity-0" id="deleteModalContent">
-            <div class="bg-red-50 py-4 px-5 border-b border-red-100 flex justify-between items-center rounded-t-lg">
-                <h3 class="text-lg font-semibold text-red-700 flex items-center">
-                    <i class="fas fa-exclamation-triangle text-red-600 mr-3 text-xl"></i> 
-                    Konfirmasi Hapus Semua Data
-                </h3>
-                <button onclick="closeDeleteAllModal()" class="text-gray-500 hover:text-gray-700 focus:outline-none">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="p-6">
-                <div class="mb-5">
-                    <div class="flex justify-center mb-5">
-                        <div class="rounded-full bg-red-100 p-3">
-                            <i class="fas fa-trash-alt text-red-600 text-2xl"></i>
-                        </div>
-                    </div>
-                    
-                    <p class="text-gray-700 mb-4 text-center">Anda akan menghapus <span class="font-bold text-red-600">SELURUH</span> data laporan barang masuk.</p>
-                    
-                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-5 rounded-r-md shadow-sm">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <i class="fas fa-exclamation-triangle text-yellow-500"></i>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm text-yellow-700">
-                                    <strong>Peringatan:</strong> Tindakan ini tidak dapat dibatalkan dan akan menghapus semua data secara permanen.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Confirmation checkbox -->
-                    <div class="mt-5 bg-gray-50 p-3 rounded-md border border-gray-200">
-                        <label class="inline-flex items-center">
-                            <input type="checkbox" id="confirmDeleteAllCheckbox" class="form-checkbox h-5 w-5 text-red-600 transition duration-150 ease-in-out rounded">
-                            <span class="ml-2 text-sm text-gray-700">Saya memahami bahwa tindakan ini tidak dapat dibatalkan</span>
-                        </label>
-                    </div>
-                </div>
-                
-                <div class="flex justify-end space-x-3 mt-6">
-                    <button type="button" onclick="closeDeleteAllModal()" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition duration-200 font-medium">
-                        <i class="fas fa-times mr-1"></i> Batal
-                    </button>
-                    <form id="deleteAllForm" method="POST" action="laporan_masuk.php">
-                        <input type="hidden" name="delete_all_data" value="1">
-                        <button type="submit" id="deleteAllConfirmBtn" disabled class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm">
-                            <i class="fas fa-trash-alt mr-1"></i> Hapus Semua Data
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
 <script>
@@ -1284,136 +869,60 @@ function printAllReports() {
     window.open('print_all_laporan_masuk.php', '_blank');
 }
 
-// View detail modal with animation
-function viewDetail(date, periode, supplier_id) {
+// View detail modal
+function viewDetail(id) {
     const modal = document.getElementById('detailModal');
-    const modalContent = document.getElementById('detailModalContent');
     const content = document.getElementById('detailContent');
     
     // Show modal
     modal.classList.remove('hidden');
     
     // Load content via AJAX
-    content.innerHTML = '<div class="flex justify-center py-8"><div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>';
+    content.innerHTML = '<div class="flex justify-center"><div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>';
     
-    // Trigger animation after a small delay
-    setTimeout(() => {
-        modalContent.classList.add('scale-100', 'opacity-100');
-        modalContent.classList.remove('scale-95', 'opacity-0');
-    }, 10);
-    
-    fetch('ajax_get_supplier_report.php?date=' + date + '&periode=' + periode + '&supplier_id=' + supplier_id)
+    fetch('ajax_get_laporan_detail.php?id=' + id)
         .then(response => response.text())
         .then(data => {
             content.innerHTML = data;
         })
         .catch(error => {
-            content.innerHTML = '<div class="bg-red-50 p-4 rounded-md text-red-500"><i class="fas fa-exclamation-circle mr-2"></i>Error loading details: ' + error.message + '</div>';
+            content.innerHTML = '<div class="text-red-500">Error loading details: ' + error.message + '</div>';
         });
 }
 
 function closeDetailModal() {
     const modal = document.getElementById('detailModal');
-    const modalContent = document.getElementById('detailModalContent');
-    
-    // First animate out
-    modalContent.classList.remove('scale-100', 'opacity-100');
-    modalContent.classList.add('scale-95', 'opacity-0');
-    
-    // Then hide the modal
-    setTimeout(() => {
-        modal.classList.add('hidden');
-    }, 300);
+    modal.classList.add('hidden');
 }
 
 // Print functionality
-function printReport(date, periode, supplier_id) {
+function printReport(id) {
     const printFrame = document.getElementById('printFrame');
-    printFrame.src = 'print_supplier_report.php?date=' + date + '&periode=' + periode + '&supplier_id=' + supplier_id;
+    printFrame.src = 'print_laporan_masuk.php?id=' + id;
     
     printFrame.onload = function() {
         printFrame.contentWindow.print();
     };
 }
 
-// Close the modals when clicking outside
-window.onclick = function(event) {
-    var detailModal = document.getElementById('detailModal');
-    var deleteModal = document.getElementById('deleteAllModal');
-    
-    if (event.target == detailModal) {
-        closeDetailModal();
-    }
-    
-    if (event.target == deleteModal) {
-        closeDeleteAllModal();
-    }
-}
-
-// Function to change records per page
-function changeRecordsPerPage(value) {
-    window.location.href = '?page=1&records_per_page=' + value;
-}
-
-// Function to show delete all confirmation modal with animation
-function confirmDeleteAll() {
-    const modal = document.getElementById('deleteAllModal');
-    const modalContent = document.getElementById('deleteModalContent');
-    
-    // First make the modal visible
-    modal.classList.remove('hidden');
-    
-    // Reset checkbox state
-    document.getElementById('confirmDeleteAllCheckbox').checked = false;
-    document.getElementById('deleteAllConfirmBtn').disabled = true;
-    
-    // Trigger animation after a small delay
-    setTimeout(() => {
-        modalContent.classList.add('scale-100', 'opacity-100');
-        modalContent.classList.remove('scale-95', 'opacity-0');
-    }, 10);
-}
-
-function closeDeleteAllModal() {
-    const modal = document.getElementById('deleteAllModal');
-    const modalContent = document.getElementById('deleteModalContent');
-    
-    // First animate out
-    modalContent.classList.remove('scale-100', 'opacity-100');
-    modalContent.classList.add('scale-95', 'opacity-0');
-    
-    // Then hide the modal
-    setTimeout(() => {
-        modal.classList.add('hidden');
-    }, 300);
-}
-
-// Add event listener for checkbox to enable/disable delete button
+// Fungsi untuk mengisi satuan otomatis ketika barang dipilih
 document.addEventListener('DOMContentLoaded', function() {
-    const checkbox = document.getElementById('confirmDeleteAllCheckbox');
-    const deleteBtn = document.getElementById('deleteAllConfirmBtn');
+    const barangSelect = document.getElementById('nama_barang');
+    const satuanInput = document.getElementById('satuan');
     
-    if (checkbox && deleteBtn) {
-        checkbox.addEventListener('change', function() {
-            deleteBtn.disabled = !this.checked;
+    if (barangSelect && satuanInput) {
+        barangSelect.addEventListener('change', function() {
+            const selectedOption = barangSelect.options[barangSelect.selectedIndex];
+            const satuan = selectedOption.getAttribute('data-satuan');
+            satuanInput.value = satuan || '';
         });
-    }
-    
-    // Add keyboard accessibility - close modals with Escape key
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
-            const detailModal = document.getElementById('detailModal');
-            const deleteModal = document.getElementById('deleteAllModal');
-            
-            if (detailModal && !detailModal.classList.contains('hidden')) {
-                closeDetailModal();
-            }
-            
-            if (deleteModal && !deleteModal.classList.contains('hidden')) {
-                closeDeleteAllModal();
-            }
+        
+        // Trigger change event on page load if a value is selected (for edit mode)
+        if (barangSelect.value) {
+            const event = new Event('change');
+            barangSelect.dispatchEvent(event);
         }
-    });
+    }
 });
 </script>
 

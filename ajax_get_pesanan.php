@@ -107,6 +107,16 @@ try {
         $bahan['total_formatted'] = formatRupiah($bahan['total']);
         $bahan['tanggal_formatted'] = date('d/m/Y H:i', strtotime($bahan['tanggal_input']));
         
+        // Make sure qty_retur is available for JavaScript
+        if ($bahan['status'] === 'retur') {
+            // Use jumlah_retur if available, otherwise use qty
+            if (isset($bahan['jumlah_retur']) && !empty($bahan['jumlah_retur'])) {
+                $bahan['qty_retur'] = $bahan['jumlah_retur'];
+            } else {
+                $bahan['qty_retur'] = $bahan['qty'];
+            }
+        }
+        
         $linked_bahan[] = $bahan;
     }
 } catch (Exception $e) {
@@ -134,6 +144,16 @@ if (empty($linked_bahan)) {
             $bahan['harga_satuan_formatted'] = formatRupiah($bahan['harga_satuan']);
             $bahan['total_formatted'] = formatRupiah($bahan['total']);
             $bahan['tanggal_formatted'] = date('d/m/Y H:i', strtotime($bahan['tanggal_input']));
+            
+            // Make sure qty_retur is available for JavaScript
+            if ($bahan['status'] === 'retur') {
+                // Use jumlah_retur if available, otherwise use qty
+                if (isset($bahan['jumlah_retur']) && !empty($bahan['jumlah_retur'])) {
+                    $bahan['qty_retur'] = $bahan['jumlah_retur'];
+                } else {
+                    $bahan['qty_retur'] = $bahan['qty'];
+                }
+            }
             
             $linked_bahan[] = $bahan;
         }
@@ -333,10 +353,22 @@ if (count($linked_bahan) > 0) {
                 break;
         }
         
+        // Format qty based on status - for approved and retur status
+        $qty_display = $item['qty'];
+        
+        // Adjust the quantity display based on status
+        if ($item['status'] == 'approved') {
+            // For approved items, show the quantity that was accepted
+            $qty_display = $item['qty'];
+        } elseif ($item['status'] == 'retur') {
+            // For returned items, show the quantity that was returned
+            $qty_display = isset($item['jumlah_retur']) && !empty($item['jumlah_retur']) ? $item['jumlah_retur'] : $item['qty'];
+        }
+        
         $html_output .= '<tr class="border-b">
             <td class="py-2 px-2 text-sm">' . $no++ . '</td>
             <td class="py-2 px-2 text-sm">' . $item['nama_barang'] . '</td>
-            <td class="py-2 px-2 text-sm">' . $item['qty'] . ' ' . $item['satuan'] . '</td>
+            <td class="py-2 px-2 text-sm">' . $qty_display . ' ' . $item['satuan'] . '</td>
             <td class="py-2 px-2 text-sm">Periode ' . $item['periode'] . '</td>
             <td class="py-2 px-2 text-sm">' . $item['tanggal_formatted'] . '</td>
             <td class="py-2 px-2 text-sm">

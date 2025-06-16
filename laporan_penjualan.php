@@ -5,6 +5,51 @@ require_once 'config/database.php';
 require_once 'config/functions.php';
 require_once 'role_permission_check.php';
 
+// Check for success or error messages in session
+$success_message = isset($_SESSION['success_message']) ? $_SESSION['success_message'] : null;
+$error_message = isset($_SESSION['error_message']) ? $_SESSION['error_message'] : null;
+
+// Clear the session messages
+unset($_SESSION['success_message']);
+unset($_SESSION['error_message']);
+
+// Process reset action if requested by admin
+if (isset($_POST['reset_laporan']) && $_SESSION['user_role'] === 'admin') {
+    // Begin transaction
+    $conn->begin_transaction();
+    
+    try {
+        // Delete all data from penjualan_detail and penjualan_bahan tables first (foreign key constraints)
+        $conn->query("DELETE FROM penjualan_bahan");
+        $conn->query("DELETE FROM penjualan_detail");
+        
+        // Delete all data from penjualan table
+        $conn->query("DELETE FROM penjualan");
+        
+        // Truncate the laporan_penjualan table
+        $conn->query("TRUNCATE TABLE laporan_penjualan");
+        
+        // Commit the transaction
+        $conn->commit();
+        
+        // Log the action
+        logActivity($_SESSION['user_id'], "Reset seluruh data laporan penjualan, menu terlaris, dan transaksi");
+        
+        // Use PRG pattern (Post-Redirect-Get) to prevent form resubmission on refresh
+        $_SESSION['success_message'] = "Seluruh data laporan penjualan, menu terlaris, dan transaksi berhasil dihapus.";
+        header("Location: laporan_penjualan.php");
+        exit;
+    } catch (Exception $e) {
+        // Rollback in case of error
+        $conn->rollback();
+        
+        // Set error message for display
+        $_SESSION['error_message'] = "Gagal menghapus data: " . $e->getMessage();
+        header("Location: laporan_penjualan.php");
+        exit;
+    }
+}
+
 // Format currency to Rupiah
 function formatRupiah($angka) {
     return 'Rp ' . number_format($angka, 0, ',', '.');
@@ -206,11 +251,34 @@ while ($row = $result_transactions->fetch_assoc()) {
             
             <div>
                 <a href="<?= $_SERVER['PHP_SELF'] ?>" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition duration-200 inline-block">
-                    <i class="fas fa-sync-alt mr-1"></i> Reset
+                    <i class="fas fa-sync-alt mr-1"></i> Reset Filter
                 </a>
             </div>
+            
+            <?php if ($_SESSION['user_role'] === 'admin'): ?>
+            <div>
+                <button type="button" id="resetLaporanBtn" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-200">
+                    <i class="fas fa-trash-alt mr-1"></i> Reset Semua Data Penjualan
+                </button>
+            </div>
+            <?php endif; ?>
         </form>
     </div>
+    
+    <!-- Success/Error Messages -->
+    <?php if (isset($success_message)): ?>
+    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6 flex justify-between items-center">
+        <span><?= $success_message ?></span>
+        <button class="text-green-700 hover:text-green-900 text-lg" onclick="this.parentElement.style.display='none'">&times;</button>
+    </div>
+    <?php endif; ?>
+    
+    <?php if (isset($error_message)): ?>
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6 flex justify-between items-center">
+        <span><?= $error_message ?></span>
+        <button class="text-red-700 hover:text-red-900 text-lg" onclick="this.parentElement.style.display='none'">&times;</button>
+    </div>
+    <?php endif; ?>
     
     <!-- Summary Section -->
     <div class="bg-white p-6 rounded-lg shadow-md mb-6">
@@ -616,6 +684,28 @@ document.addEventListener('DOMContentLoaded', function() {
         document.addEventListener('click', function(event) {
             if (!exportDropdownButton.contains(event.target) && !exportDropdownMenu.contains(event.target)) {
                 exportDropdownMenu.classList.add('hidden');
+            }
+        });
+    }
+    
+    // Reset Laporan Button
+    const resetLaporanBtn = document.getElementById('resetLaporanBtn');
+    if (resetLaporanBtn) {
+        resetLaporanBtn.addEventListener('click', function() {
+            if (confirm('PERHATIAN: Tindakan ini akan menghapus SELURUH data laporan penjualan, menu terlaris, dan transaksi. Data tidak dapat dikembalikan. Yakin ingin melanjutkan?')) {
+                // Create and submit a form
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = window.location.href;
+                
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'reset_laporan';
+                input.value = '1';
+                
+                form.appendChild(input);
+                document.body.appendChild(form);
+                form.submit();
             }
         });
     }

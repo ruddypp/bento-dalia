@@ -6,6 +6,24 @@ require_once 'config/functions.php';
 require_once 'role_permission_check.php';
 checkLogin();
 
+// Make sure user session is valid by checking if user exists in database
+if (isset($_SESSION['user_id'])) {
+    $user_check_query = "SELECT id_user FROM users WHERE id_user = ?";
+    $user_check_stmt = mysqli_prepare($conn, $user_check_query);
+    mysqli_stmt_bind_param($user_check_stmt, "i", $_SESSION['user_id']);
+    mysqli_stmt_execute($user_check_stmt);
+    $user_result = mysqli_stmt_get_result($user_check_stmt);
+    
+    if (mysqli_num_rows($user_result) == 0) {
+        // User doesn't exist in database, clear session and redirect to login
+        session_unset();
+        session_destroy();
+        header("Location: login.php?error=invalid_user");
+        exit();
+    }
+    mysqli_stmt_close($user_check_stmt);
+}
+
 // Function to format rupiah
 function formatRupiah($angka) {
     return "Rp " . number_format($angka, 0, ',', '.');
@@ -43,11 +61,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 throw new Exception("Tidak ada item yang dipilih");
             }
             
+            // Validate user_id exists in users table
+            if (!isset($_SESSION['user_id'])) {
+                throw new Exception("Sesi pengguna tidak valid. Silakan login kembali.");
+            }
+            
+            $user_id = $_SESSION['user_id'];
+            
+            // Check if user exists in the users table
+            $user_check_query = "SELECT id_user FROM users WHERE id_user = ?";
+            $user_check_stmt = mysqli_prepare($conn, $user_check_query);
+            mysqli_stmt_bind_param($user_check_stmt, "i", $user_id);
+            mysqli_stmt_execute($user_check_stmt);
+            $user_result = mysqli_stmt_get_result($user_check_stmt);
+            
+            if (mysqli_num_rows($user_result) == 0) {
+                throw new Exception("ID pengguna tidak valid dalam database");
+            }
+            
+            mysqli_stmt_close($user_check_stmt);
+            
             // Insert into pesanan_barang table
             $query = "INSERT INTO pesanan_barang (id_supplier, tanggal_pesan, id_user, catatan, status) 
                       VALUES (?, ?, ?, ?, ?)";
             $stmt = mysqli_prepare($conn, $query);
-            $user_id = $_SESSION['user_id'];
             mysqli_stmt_bind_param($stmt, "isiss", $id_supplier, $tanggal_pesan, $user_id, $catatan, $status);
             
             if (!mysqli_stmt_execute($stmt)) {
@@ -99,15 +136,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         logActivity($user_id, "Menambahkan barang baru dari pesanan: $new_item_name");
                     }
                     
-                    // Calculate total
-                    $total = $qty * $harga_satuan;
+                    // Use harga_satuan directly as the total
+                    $total = $harga_satuan;
                     $total_pesanan += $total;
                     $item_count++;
                     
-                    // Insert into pesanan_detail
+                                                        // Insert into pesanan_detail
                     $detail_query = "INSERT INTO pesanan_detail (id_pesanan, id_barang, qty, periode, harga_satuan, total, lokasi) 
                                     VALUES (?, ?, ?, ?, ?, ?, ?)";
                     $detail_stmt = mysqli_prepare($conn, $detail_query);
+                    // harga_satuan now represents the total price directly
                     mysqli_stmt_bind_param($detail_stmt, "iiiddds", $id_pesanan, $id_barang, $qty, $periode, $harga_satuan, $total, $lokasi);
                     
                     if (!mysqli_stmt_execute($detail_stmt)) {
@@ -128,8 +166,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         $id_barang, 
                         $qty, 
                         $periode, 
-                        $harga_satuan, 
-                        $total, 
+                        $harga_satuan,  // Now represents the total price directly
+                        $total,  // Same as harga_satuan
                         $lokasi, 
                         $user_id,
                         $id_pesanan
@@ -223,14 +261,135 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 mysqli_stmt_close($update_bahan_stmt);
             }
             
-            // Log activity
+            // Validate user_id exists in users table
+            if (!isset($_SESSION['user_id'])) {
+                throw new Exception("Sesi pengguna tidak valid. Silakan login kembali.");
+            }
+            
             $user_id = $_SESSION['user_id'];
+            
+            // Check if user exists in the users table
+            $user_check_query = "SELECT id_user FROM users WHERE id_user = ?";
+            $user_check_stmt = mysqli_prepare($conn, $user_check_query);
+            mysqli_stmt_bind_param($user_check_stmt, "i", $user_id);
+            mysqli_stmt_execute($user_check_stmt);
+            $user_result = mysqli_stmt_get_result($user_check_stmt);
+            
+            if (mysqli_num_rows($user_result) == 0) {
+                throw new Exception("ID pengguna tidak valid dalam database");
+            }
+            
+            mysqli_stmt_close($user_check_stmt);
+            
+            // Log activity
             logActivity($user_id, "Membatalkan pesanan #$id_pesanan dari supplier: {$pesanan['nama_supplier']}");
             
             // Commit transaction
             mysqli_commit($conn);
             
             setAlert("success", "Pesanan berhasil dibatalkan!");
+        } catch (Exception $e) {
+            // Rollback transaction on error
+            mysqli_rollback($conn);
+            setAlert("error", $e->getMessage());
+        }
+        
+        // Redirect to refresh page
+        header("Location: pesan_barang.php");
+        exit();
+    }
+    elseif (isset($_POST['delete_pesanan'])) {
+        // Delete pesanan
+        $id_pesanan = (int)$_POST['id_pesanan'];
+        
+        // Begin transaction
+        mysqli_begin_transaction($conn);
+        
+        try {
+            // Get pesanan details
+            $query = "SELECT pb.*, s.nama_supplier 
+                      FROM pesanan_barang pb 
+                      LEFT JOIN supplier s ON pb.id_supplier = s.id_supplier 
+                      WHERE pb.id_pesanan = ?";
+            $stmt = mysqli_prepare($conn, $query);
+            mysqli_stmt_bind_param($stmt, "i", $id_pesanan);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            $pesanan = mysqli_fetch_assoc($result);
+            
+            if (!$pesanan) {
+                throw new Exception("Pesanan tidak ditemukan");
+            }
+            
+            // Check if any bahan_baku entries are linked to this pesanan
+            $bahan_query = "SELECT id_bahan_baku FROM bahan_baku WHERE id_pesanan = ?";
+            $bahan_stmt = mysqli_prepare($conn, $bahan_query);
+            mysqli_stmt_bind_param($bahan_stmt, "i", $id_pesanan);
+            mysqli_stmt_execute($bahan_stmt);
+            $bahan_result = mysqli_stmt_get_result($bahan_stmt);
+            
+            // If there are linked bahan_baku entries, delete those first
+            while ($bahan = mysqli_fetch_assoc($bahan_result)) {
+                $delete_bahan_query = "DELETE FROM bahan_baku WHERE id_bahan_baku = ?";
+                $delete_bahan_stmt = mysqli_prepare($conn, $delete_bahan_query);
+                mysqli_stmt_bind_param($delete_bahan_stmt, "i", $bahan['id_bahan_baku']);
+                
+                if (!mysqli_stmt_execute($delete_bahan_stmt)) {
+                    throw new Exception("Gagal menghapus bahan baku terkait: " . mysqli_stmt_error($delete_bahan_stmt));
+                }
+                
+                mysqli_stmt_close($delete_bahan_stmt);
+            }
+            
+            // Delete any linked pesanan_detail entries
+            $delete_details_query = "DELETE FROM pesanan_detail WHERE id_pesanan = ?";
+            $delete_details_stmt = mysqli_prepare($conn, $delete_details_query);
+            mysqli_stmt_bind_param($delete_details_stmt, "i", $id_pesanan);
+            
+            if (!mysqli_stmt_execute($delete_details_stmt)) {
+                throw new Exception("Gagal menghapus detail pesanan: " . mysqli_stmt_error($delete_details_stmt));
+            }
+            
+            mysqli_stmt_close($delete_details_stmt);
+            
+            // Finally delete the pesanan
+            $delete_query = "DELETE FROM pesanan_barang WHERE id_pesanan = ?";
+            $delete_stmt = mysqli_prepare($conn, $delete_query);
+            mysqli_stmt_bind_param($delete_stmt, "i", $id_pesanan);
+            
+            if (!mysqli_stmt_execute($delete_stmt)) {
+                throw new Exception("Gagal menghapus pesanan: " . mysqli_stmt_error($delete_stmt));
+            }
+            
+            mysqli_stmt_close($delete_stmt);
+            
+            // Validate user_id exists in users table
+            if (!isset($_SESSION['user_id'])) {
+                throw new Exception("Sesi pengguna tidak valid. Silakan login kembali.");
+            }
+            
+            $user_id = $_SESSION['user_id'];
+            
+            // Check if user exists in the users table
+            $user_check_query = "SELECT id_user FROM users WHERE id_user = ?";
+            $user_check_stmt = mysqli_prepare($conn, $user_check_query);
+            mysqli_stmt_bind_param($user_check_stmt, "i", $user_id);
+            mysqli_stmt_execute($user_check_stmt);
+            $user_result = mysqli_stmt_get_result($user_check_stmt);
+            
+            if (mysqli_num_rows($user_result) == 0) {
+                throw new Exception("ID pengguna tidak valid dalam database");
+            }
+            
+            mysqli_stmt_close($user_check_stmt);
+            
+            // Log activity
+            logActivity($user_id, "Menghapus pesanan #$id_pesanan dari supplier: {$pesanan['nama_supplier']}");
+            
+            // Commit transaction
+            mysqli_commit($conn);
+            
+            setAlert("success", "Pesanan berhasil dihapus dari sistem!");
         } catch (Exception $e) {
             // Rollback transaction on error
             mysqli_rollback($conn);
@@ -513,6 +672,7 @@ $total_pages = ceil($total_records / $records_per_page);
                 
                 <div class="mt-6">
                     <h4 class="text-md font-medium text-gray-800 mb-2">Detail Item Pesanan</h4>
+                    <p class="text-sm text-gray-600 mb-3">Masukkan harga total langsung di kolom "Harga Total" tanpa perlu menghitung dari jumlah barang.</p>
                     
                     <div class="overflow-x-auto">
                         <table class="min-w-full bg-white border">
@@ -521,9 +681,9 @@ $total_pages = ceil($total_records / $records_per_page);
                                     <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Barang</th>
                                     <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
                                     <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Periode</th>
-                                    <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Harga Satuan</th>
+                                    <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Harga Total</th>
                                     <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lokasi</th>
-                                    <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                    <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Preview</th>
                                     <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                                 </tr>
                             </thead>
@@ -619,8 +779,8 @@ $total_pages = ceil($total_records / $records_per_page);
 <div id="cancelPesananModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
     <div class="relative top-10 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div class="mt-3 text-center">
-            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                <i class="fas fa-times text-red-600 text-xl"></i>
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
+                <i class="fas fa-times text-yellow-600 text-xl"></i>
             </div>
             <h3 class="text-lg leading-6 font-medium text-gray-900 mt-2">Batalkan Pesanan</h3>
             <div class="mt-2 px-7 py-3">
@@ -631,10 +791,38 @@ $total_pages = ceil($total_records / $records_per_page);
                 <input type="hidden" id="cancel_id_pesanan" name="id_pesanan">
                 
                 <div class="items-center px-4 py-3">
-                    <button type="submit" name="cancel_pesanan" class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300">
+                    <button type="submit" name="cancel_pesanan" class="px-4 py-2 bg-yellow-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-300">
                         Ya, Batalkan Pesanan
                     </button>
                     <button type="button" onclick="closeModal('cancelPesananModal')" class="mt-3 px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                        Batal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Pesanan Modal -->
+<div id="deletePesananModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-10 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                <i class="fas fa-trash-alt text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mt-2">Hapus Pesanan</h3>
+            <div class="mt-2 px-7 py-3">
+                <p class="text-sm text-gray-500">Apakah Anda yakin ingin menghapus pesanan ini? Tindakan ini tidak dapat dibatalkan dan akan menghapus pesanan dari sistem secara permanen.</p>
+            </div>
+            
+            <form method="POST" action="">
+                <input type="hidden" id="delete_id_pesanan" name="id_pesanan">
+                
+                <div class="items-center px-4 py-3">
+                    <button type="submit" name="delete_pesanan" class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300">
+                        Ya, Hapus Pesanan
+                    </button>
+                    <button type="button" onclick="closeModal('deletePesananModal')" class="mt-3 px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300">
                         Batal
                     </button>
                 </div>
@@ -1010,25 +1198,18 @@ $total_pages = ceil($total_records / $records_per_page);
         }
     }
     
-    // Calculate total function
+    // Display total directly from harga_satuan
     function calculateTotal(row) {
-        const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
         const harga = parseFloat(row.querySelector('.harga-input').value) || 0;
-        const total = qty * harga;
-        
-        row.querySelector('.total-display').textContent = formatRupiah(total);
+        row.querySelector('.total-display').textContent = formatRupiah(harga);
     }
     
     // Setup events for item row
     function setupItemEvents(row) {
-        const qtyInput = row.querySelector('.qty-input');
         const hargaInput = row.querySelector('.harga-input');
         const barangSelect = row.querySelector('.barang-select');
         
-        qtyInput.addEventListener('input', function() {
-            calculateTotal(row);
-        });
-        
+        // Only update total when harga changes
         hargaInput.addEventListener('input', function() {
             calculateTotal(row);
         });
@@ -1142,9 +1323,9 @@ $total_pages = ceil($total_records / $records_per_page);
                                                 <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Qty</th>
                                                 <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Satuan</th>
                                                 <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Periode</th>
-                                                <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Harga Satuan</th>
+                                                <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Harga Total</th>
                                                 <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Lokasi</th>
-                                                <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                                                <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Nilai</th>
                                             </tr>
                                         </thead>
                                         <tbody>`;
@@ -1210,11 +1391,17 @@ $total_pages = ceil($total_records / $records_per_page);
                                 item.status === 'approved' ? 'bg-green-100 text-green-800' : 
                                 'bg-red-100 text-red-800';
                             
+                            // Determine quantity to display based on status
+                            let qtyDisplay = item.qty;
+                            if (item.status === 'retur' && item.qty_retur) {
+                                qtyDisplay = item.qty_retur;
+                            }
+                            
                             html += `
                                 <tr class="border-b">
                                     <td class="py-2 px-2 text-sm">${index + 1}</td>
                                     <td class="py-2 px-2 text-sm">${item.nama_barang}</td>
-                                    <td class="py-2 px-2 text-sm">${item.qty} ${item.satuan}</td>
+                                    <td class="py-2 px-2 text-sm">${qtyDisplay} ${item.satuan}</td>
                                     <td class="py-2 px-2 text-sm">Periode ${item.periode}</td>
                                     <td class="py-2 px-2 text-sm">${item.tanggal_formatted}</td>
                                     <td class="py-2 px-2 text-sm">
@@ -1295,10 +1482,10 @@ $total_pages = ceil($total_records / $records_per_page);
         showModal('cancelPesananModal');
     }
     
-    // Add the missing confirmDelete function that redirects to cancelPesanan
+    // Function to delete pesanan
     function confirmDelete(id) {
-        // Redirect to cancelPesanan function since that's the intended behavior
-        cancelPesanan(id);
+        document.getElementById('delete_id_pesanan').value = id;
+        showModal('deletePesananModal');
     }
     
     function changePerPage(perPage) {

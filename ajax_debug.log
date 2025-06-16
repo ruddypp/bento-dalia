@@ -1,0 +1,42 @@
+[2025-06-16 08:21:14] AJAX request started: {"supplier_id":"7"}
+[2025-06-16 08:21:14] Processing supplier ID: 7
+[2025-06-16 08:21:14] Sending response: {"success":true,"items":[{"id_barang":0,"nama_barang":"AYAM DADU","satuan":"KG","harga":0},{"id_barang":0,"nama_barang":"AYAM BABY L","satuan":"KG","harga":0},{"id_barang":0,"nama_barang":"AYAM PENTUNG","satuan":"KG","harga":0},{"id_barang":0,"nama_barang":"AYAM DADA GEPREK","satuan":"KG","harga":0}],"supplier":{"id_supplier":7,"nama_supplier":"BERJAH JAYA CHICK","alamat":"PASAR MINI CIPUTAT","kontak":"08786754332"}}
+[2025-06-16 08:31:35] AJAX request started: {"supplier_id":"7"}
+[2025-06-16 08:31:35] Processing supplier ID: 7
+[2025-06-16 08:31:35] Sending response: {"success":true,"items":[{"id_barang":19,"nama_barang":"AYAM DADU","satuan":"KG","harga":"32000.00"},{"id_barang":0,"nama_barang":"AYAM BABY L","satuan":"KG","harga":0},{"id_barang":0,"nama_barang":"AYAM PENTUNG","satuan":"KG","harga":0},{"id_barang":0,"nama_barang":"AYAM DADA GEPREK","satuan":"KG","harga":0}],"supplier":{"id_supplier":7,"nama_supplier":"BERJAH JAYA CHICK","alamat":"PASAR MINI CIPUTAT","kontak":"08786754332"}}
+[2025-06-16 10:45:20] AJAX request started: {"supplier_id":"4"}
+[2025-06-16 10:45:20] Processing supplier ID: 4
+[2025-06-16 10:45:20] Sending response: {"success":true,"items":[{"id_barang":17,"nama_barang":"meriang","satuan":"kg","harga":"90000.00"}],"supplier":{"id_supplier":4,"nama_supplier":"rojak","alamat":"w","kontak":"s"}}
+[2025-06-16 10:45:41] AJAX request started: {"supplier_id":"3"}
+[2025-06-16 10:45:41] Processing supplier ID: 3
+[2025-06-16 10:45:41] Sending response: {"success":true,"items":[{"id_barang":13,"nama_barang":"kopi","satuan":"pack","harga":"3000.00"},{"id_barang":14,"nama_barang":"gula","satuan":"gr","harga":"3000.00"},{"id_barang":15,"nama_barang":"teh","satuan":"pack","harga":"4000.00"},{"id_barang":16,"nama_barang":"susu","satuan":"pack","harga":"10000.00"}],"supplier":{"id_supplier":3,"nama_supplier":"rudy","alamat":"jalan aren 1","kontak":"0812212121"}}
+[2025-06-16 10:49:17] AJAX request started: {"supplier_id":"3"}
+[2025-06-16 10:49:17] Processing supplier ID: 3
+[2025-06-16 10:49:17] Sending response: {"success":true,"items":[{"id_barang":13,"nama_barang":"kopi","satuan":"pack","harga":"3000.00"},{"id_barang":14,"nama_barang":"gula","satuan":"gr","harga":"3000.00"},{"id_barang":15,"nama_barang":"teh","satuan":"pack","harga":"4000.00"},{"id_barang":16,"nama_barang":"susu","satuan":"pack","harga":"10000.00"}],"supplier":{"id_supplier":3,"nama_supplier":"rudy","alamat":"jalan aren 1","kontak":"0812212121"}}
+[2025-06-16 10:49:34] AJAX request started: {"supplier_id":"3"}
+[2025-06-16 10:49:34] Processing supplier ID: 3
+[2025-06-16 10:49:34] Sending response: {"success":true,"items":[{"id_barang":13,"nama_barang":"kopi","satuan":"pack","harga":"3000.00"},{"id_barang":14,"nama_barang":"gula","satuan":"gr","harga":"3000.00"},{"id_barang":15,"nama_barang":"teh","satuan":"pack","harga":"4000.00"},{"id_barang":16,"nama_barang":"susu","satuan":"pack","harga":"10000.00"}],"supplier":{"id_supplier":3,"nama_supplier":"rudy","alamat":"jalan aren 1","kontak":"0812212121"}}
+[2025-06-16 10:50:18] AJAX request started: {"supplier_id":"3"}
+[2025-06-16 10:50:18] Processing supplier ID: 3
+[2025-06-16 10:50:18] Sending response: {"success":true,"items":[{"id_barang":13,"nama_barang":"kopi","satuan":"pack","harga":"3000.00"},{"id_barang":14,"nama_barang":"gula","satuan":"gr","harga":"3000.00"},{"id_barang":15,"nama_barang":"teh","satuan":"pack","harga":"4000.00"},{"id_barang":16,"nama_barang":"susu","satuan":"pack","harga":"10000.00"}],"supplier":{"id_supplier":3,"nama_supplier":"rudy","alamat":"jalan aren 1","kontak":"0812212121"}}
+[2025-06-16 10:52:46] AJAX request started: {"supplier_id":"3"}
+[2025-06-16 10:52:46] Processing supplier ID: 3
+[2025-06-16 10:52:46] Sending response: {"success":true,"items":[{"id_barang":13,"nama_barang":"kopi","satuan":"pack","harga":"3000.00"},{"id_barang":14,"nama_barang":"gula","satuan":"gr","harga":"3000.00"},{"id_barang":15,"nama_barang":"teh","satuan":"pack","harga":"4000.00"},{"id_barang":16,"nama_barang":"susu","satuan":"pack","harga":"10000.00"}],"supplier":{"id_supplier":3,"nama_supplier":"rudy","alamat":"jalan aren 1","kontak":"0812212121"}}
+[2025-06-16 10:59:11] AJAX request started: {"supplier_id":"3"}
+[2025-06-16 10:59:11] Processing supplier ID: 3
+[2025-06-16 10:59:11] Sending response: {"success":true,"items":[{"id_barang":13,"nama_barang":"kopi","satuan":"pack","harga":"3000.00"},{"id_barang":14,"nama_barang":"gula","satuan":"gr","harga":"3000.00"},{"id_barang":15,"nama_barang":"teh","satuan":"pack","harga":"4000.00"},{"id_barang":16,"nama_barang":"susu","satuan":"pack","harga":"10000.00"}],"supplier":{"id_supplier":3,"nama_supplier":"rudy","alamat":"jalan aren 1","kontak":"0812212121"}}
+[2025-06-16 11:38:53] AJAX request started: {"supplier_id":"3"}
+[2025-06-16 11:38:53] Processing supplier ID: 3
+[2025-06-16 11:38:53] Sending response: {"success":true,"items":[{"id_barang":13,"nama_barang":"kopi","satuan":"pack","harga":"3000.00"},{"id_barang":14,"nama_barang":"gula","satuan":"gr","harga":"3000.00"},{"id_barang":15,"nama_barang":"teh","satuan":"pack","harga":"4000.00"},{"id_barang":16,"nama_barang":"susu","satuan":"pack","harga":"10000.00"}],"supplier":{"id_supplier":3,"nama_supplier":"rudy","alamat":"jalan aren 1","kontak":"0812212121"}}
+[2025-06-16 11:46:22] AJAX request started: {"supplier_id":"3"}
+[2025-06-16 11:46:22] Processing supplier ID: 3
+[2025-06-16 11:46:22] Sending response: {"success":true,"items":[{"id_barang":13,"nama_barang":"kopi","satuan":"pack","harga":"3000.00"},{"id_barang":14,"nama_barang":"gula","satuan":"gr","harga":"3000.00"},{"id_barang":15,"nama_barang":"teh","satuan":"pack","harga":"4000.00"},{"id_barang":16,"nama_barang":"susu","satuan":"pack","harga":"10000.00"}],"supplier":{"id_supplier":3,"nama_supplier":"rudy","alamat":"jalan aren 1","kontak":"0812212121"}}
+[2025-06-16 11:54:47] AJAX request started: {"supplier_id":"3"}
+[2025-06-16 11:54:47] Processing supplier ID: 3
+[2025-06-16 11:54:47] Sending response: {"success":true,"items":[{"id_barang":13,"nama_barang":"kopi","satuan":"pack","harga":"3000.00"},{"id_barang":14,"nama_barang":"gula","satuan":"gr","harga":"3000.00"},{"id_barang":15,"nama_barang":"teh","satuan":"pack","harga":"4000.00"},{"id_barang":16,"nama_barang":"susu","satuan":"pack","harga":"10000.00"}],"supplier":{"id_supplier":3,"nama_supplier":"rudy","alamat":"jalan aren 1","kontak":"0812212121"}}
+[2025-06-16 11:56:05] AJAX request started: {"supplier_id":"3"}
+[2025-06-16 11:56:05] Processing supplier ID: 3
+[2025-06-16 11:56:05] Sending response: {"success":true,"items":[{"id_barang":13,"nama_barang":"kopi","satuan":"pack","harga":"3000.00"},{"id_barang":14,"nama_barang":"gula","satuan":"gr","harga":"3000.00"},{"id_barang":15,"nama_barang":"teh","satuan":"pack","harga":"4000.00"},{"id_barang":16,"nama_barang":"susu","satuan":"pack","harga":"10000.00"}],"supplier":{"id_supplier":3,"nama_supplier":"rudy","alamat":"jalan aren 1","kontak":"0812212121"}}
+[2025-06-16 12:06:18] AJAX request started: {"supplier_id":"3"}
+[2025-06-16 12:06:18] Processing supplier ID: 3
+[2025-06-16 12:06:18] Sending response: {"success":true,"items":[{"id_barang":13,"nama_barang":"kopi","satuan":"pack","harga":"3000.00"},{"id_barang":14,"nama_barang":"gula","satuan":"gr","harga":"3000.00"},{"id_barang":15,"nama_barang":"teh","satuan":"pack","harga":"4000.00"},{"id_barang":16,"nama_barang":"susu","satuan":"pack","harga":"10000.00"}],"supplier":{"id_supplier":3,"nama_supplier":"rudy","alamat":"jalan aren 1","kontak":"0812212121"}}

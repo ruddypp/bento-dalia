@@ -1,0 +1,417 @@
+<?php
+// Start output buffering to prevent "headers already sent" errors
+ob_start();
+
+session_start();
+require_once 'config/database.php';
+require_once 'config/functions.php';
+
+// Cek login kecuali untuk halaman login
+if (!isset($_SESSION['user_id']) && basename($_SERVER['PHP_SELF']) != 'login.php' && basename($_SERVER['PHP_SELF']) != 'forgot_password.php' && basename($_SERVER['PHP_SELF']) != 'reset_admin.php') {
+    header("Location: login.php");
+    exit();
+}
+
+// Get store info
+$store_info = getStoreInfo();
+?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Inventori - <?= isset($pageTitle) ? $pageTitle : 'Dashboard' ?></title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    },
+                    boxShadow: {
+                        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- DataTables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    
+    <!-- Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+    
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .sidebar {
+            background: linear-gradient(135deg,rgb(68, 131, 52),rgb(15, 83, 41));
+            box-shadow: 0 4px 12px rgba(30, 146, 36, 0.15);
+            transition: all 0.3s ease;
+            height: 100vh;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+        }
+        
+        .sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+        }
+        
+        .sidebar-item {
+            border-radius: 8px;
+            margin-bottom: 0.25rem;
+            transition: all 0.2s ease;
+        }
+        
+        .sidebar-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateX(3px);
+        }
+        
+        .card {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            transform: translateY(-3px);
+        }
+        
+        .btn {
+            transition: all 0.2s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dropdown-menu {
+            border-radius: 10px;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            transform-origin: top right;
+            transition: all 0.2s ease;
+        }
+        
+        .dropdown-item {
+            border-radius: 6px;
+            margin: 0.25rem;
+            transition: all 0.2s ease;
+        }
+        
+        .dropdown-item:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <?php if(isset($_SESSION['user_id'])): ?>
+    <div class="flex">
+        <!-- Sidebar -->
+        <div id="sidebar" class="sidebar text-white w-64 px-4 py-4 fixed h-full z-50">
+        <div class="flex flex-col items-start justify-between mb-6">
+    <h2 class="text-xl font-bold flex items-center">
+        <i class="fas fa-boxes mr-2"></i> BKIS
+    </h2>
+    <p class="text-sm font-light ml-7">(Bento Kopi Inventory System)</p>
+    <button id="sidebar-toggle" class="lg:hidden bg-blue-600 rounded-full p-2 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400">
+        <i class="fas fa-bars"></i>
+    </button>
+</div>
+
+            
+            <nav>
+                <ul class="space-y-1">
+                    <li class="sidebar-item">
+                        <a href="index.php" class="flex items-center block py-2 px-3 rounded-lg transition duration-200 hover:bg-blue-600 <?= basename($_SERVER['PHP_SELF']) == 'index.php' ? 'bg-blue-700' : '' ?>">
+                            <i class="fas fa-tachometer-alt w-5 text-sm"></i> 
+                            <span class="text-sm ml-2">Dashboard</span>
+                        </a>
+                    </li>
+                    
+                    <li class="sidebar-item">
+                        <a href="barang.php" class="flex items-center block py-2 px-3 rounded-lg transition duration-200 hover:bg-blue-600 <?= basename($_SERVER['PHP_SELF']) == 'barang.php' ? 'bg-blue-700' : '' ?>">
+                            <i class="fas fa-boxes w-5 text-sm"></i>
+                            <span class="text-sm ml-2">Stok Barang</span>
+                        </a>
+                    </li>
+                    
+                    <li class="sidebar-item">
+                        <a href="supplier.php" class="flex items-center block py-2 px-3 rounded-lg transition duration-200 hover:bg-blue-600 <?= basename($_SERVER['PHP_SELF']) == 'supplier.php' ? 'bg-blue-700' : '' ?>">
+                            <i class="fas fa-truck w-5 text-sm"></i>
+                            <span class="text-sm ml-2">Data Supplier</span>
+                        </a>
+                    </li>
+                    
+                    <li class="sidebar-item">
+                        <a href="penerimaan.php" class="flex items-center block py-2 px-3 rounded-lg transition duration-200 hover:bg-blue-600 <?= basename($_SERVER['PHP_SELF']) == 'penerimaan.php' ? 'bg-blue-700' : '' ?>">
+                            <i class="fas fa-dolly w-5 text-sm"></i>
+                            <span class="text-sm ml-2">Penerimaan Barang</span>
+                        </a>
+                    </li>
+                    
+                    <li class="sidebar-item">
+                        <a href="pengeluaran.php" class="flex items-center block py-2 px-3 rounded-lg transition duration-200 hover:bg-blue-600 <?= basename($_SERVER['PHP_SELF']) == 'pengeluaran.php' ? 'bg-blue-700' : '' ?>">
+                            <i class="fas fa-shipping-fast w-5 text-sm"></i>
+                            <span class="text-sm ml-2">Pengeluaran Barang</span>
+                        </a>
+                    </li>
+                    
+                    <li class="sidebar-item">
+                        <a href="stok_opname.php" class="flex items-center block py-2 px-3 rounded-lg transition duration-200 hover:bg-blue-600 <?= basename($_SERVER['PHP_SELF']) == 'stok_opname.php' ? 'bg-blue-700' : '' ?>">
+                            <i class="fas fa-clipboard-check w-5 text-sm"></i>
+                            <span class="text-sm ml-2">Stok Opname</span>
+                        </a>
+                    </li>
+                    
+                    <li class="sidebar-item">
+                        <a href="retur_barang.php" class="flex items-center block py-2 px-3 rounded-lg transition duration-200 hover:bg-blue-600 <?= basename($_SERVER['PHP_SELF']) == 'retur_barang.php' ? 'bg-blue-700' : '' ?>">
+                            <i class="fas fa-undo w-5 text-sm"></i>
+                            <span class="text-sm ml-2">Retur Barang</span>
+                        </a>
+                    </li>
+                    
+                    <li class="sidebar-item">
+                        <a href="#" class="flex items-center block py-2 px-3 rounded-lg transition duration-200 hover:bg-blue-600" 
+                           onclick="toggleSubmenu('menu-submenu')" 
+                           aria-expanded="false" 
+                           aria-controls="menu-submenu">
+                            <i class="fas fa-utensils w-5 text-sm"></i>
+                            <span class="text-sm ml-2">Data Menu</span>
+                            <i class="fas fa-chevron-down ml-auto text-xs"></i>
+                        </a>
+                        <ul id="menu-submenu" class="hidden pl-7 mt-1 space-y-1">
+                            <li>
+                                <a href="menu_makanan.php" class="flex items-center block py-2 px-3 rounded-lg transition duration-200 hover:bg-blue-600 <?= basename($_SERVER['PHP_SELF']) == 'menu_makanan.php' ? 'bg-blue-700' : '' ?>">
+                                    <i class="fas fa-hamburger w-5 text-sm"></i>
+                                    <span class="text-sm ml-2">Menu Makanan</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="menu_minuman.php" class="flex items-center block py-2 px-3 rounded-lg transition duration-200 hover:bg-blue-600 <?= basename($_SERVER['PHP_SELF']) == 'menu_minuman.php' ? 'bg-blue-700' : '' ?>">
+                                    <i class="fas fa-coffee w-5 text-sm"></i>
+                                    <span class="text-sm ml-2">Menu Minuman</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                    <li class="sidebar-item">
+                        <a href="#" class="flex items-center block py-2 px-3 rounded-lg transition duration-200 hover:bg-blue-600" 
+                           onclick="toggleSubmenu('laporan-submenu')" 
+                           aria-expanded="false" 
+                           aria-controls="laporan-submenu">
+                            <i class="fas fa-clipboard w-5 text-sm"></i>
+                            <span class="text-sm ml-2">Laporan Barang</span>
+                            <i class="fas fa-chevron-down ml-auto text-xs"></i>
+                        </a>
+                        <ul id="laporan-submenu" class="hidden pl-7 mt-1 space-y-1">
+                            <li>
+                                <a href="laporan_masuk.php" class="flex items-center block py-2 px-3 rounded-lg transition duration-200 hover:bg-blue-600 <?= basename($_SERVER['PHP_SELF']) == 'laporan_masuk.php' ? 'bg-blue-700' : '' ?>">
+                                    <i class="fas fa-file-import w-5 text-sm"></i>
+                                    <span class="text-sm ml-2">Laporan Barang Masuk</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="laporan_keluar.php" class="flex items-center block py-2 px-3 rounded-lg transition duration-200 hover:bg-blue-600 <?= basename($_SERVER['PHP_SELF']) == 'laporan_keluar.php' ? 'bg-blue-700' : '' ?>">
+                                    <i class="fas fa-file-export w-5 text-sm"></i>
+                                    <span class="text-sm ml-2">Laporan Barang Keluar</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                    <?php if ($_SESSION['user_role'] == 'administrator' || $_SESSION['user_role'] == 'manajer'): ?>
+                    <li class="mt-3">
+                        <div class="text-xs uppercase font-medium text-blue-200 opacity-75 pl-3 mb-2">Administrasi</div>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="pengguna.php" class="flex items-center block py-2 px-3 rounded-lg transition duration-200 hover:bg-blue-600 <?= basename($_SERVER['PHP_SELF']) == 'pengguna.php' ? 'bg-blue-700' : '' ?>">
+                            <i class="fas fa-users w-5 text-sm"></i>
+                            <span class="text-sm ml-2">Manajemen Pengguna</span>
+                        </a>
+                    </li>
+                    
+                    <li class="sidebar-item">
+                        <a href="log_aktivitas.php" class="flex items-center block py-2 px-3 rounded-lg transition duration-200 hover:bg-blue-600 <?= basename($_SERVER['PHP_SELF']) == 'log_aktivitas.php' ? 'bg-blue-700' : '' ?>">
+                            <i class="fas fa-history w-5 text-sm"></i>
+                            <span class="text-sm ml-2">Log Aktivitas</span>
+                        </a>
+                    </li>
+                    
+                    <li class="sidebar-item">
+                        <a href="data_toko.php" class="flex items-center block py-2 px-3 rounded-lg transition duration-200 hover:bg-blue-600 <?= basename($_SERVER['PHP_SELF']) == 'data_toko.php' ? 'bg-blue-700' : '' ?>">
+                            <i class="fas fa-store w-5 text-sm"></i>
+                            <span class="text-sm ml-2">Data Toko</span>
+                        </a>
+                    </li>
+                    <?php endif; ?>
+                </ul>
+            </nav>
+            
+            <div class="mt-auto pt-5">
+                <div class="border-t border-gray-700 opacity-50 pt-4">
+                    <a href="profile.php" class="flex items-center px-3 py-2 text-xs text-blue-100 hover:text-white rounded-lg hover:bg-blue-600 transition duration-200">
+                        <i class="fas fa-user-cog w-5"></i>
+                        <span class="ml-2">Profil</span>
+                    </a>
+                    <a href="logout.php" class="flex items-center px-3 py-2 text-xs text-blue-100 hover:text-white rounded-lg hover:bg-blue-600 transition duration-200">
+                        <i class="fas fa-sign-out-alt w-5"></i>
+                        <span class="ml-2">Logout</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Content -->
+        <div id="content" class="flex-1 pl-64 transition-all duration-300">
+            <div class="sticky top-0 z-40 bg-white shadow-sm">
+                <div class="flex justify-between items-center px-6 py-2.5">
+                    <h1 class="text-xl font-bold text-gray-800"><?= isset($pageTitle) ? $pageTitle : 'Dashboard' ?></h1>
+                    
+                    <div class="flex items-center space-x-4">
+                        <span class="hidden md:inline-block text-sm text-gray-600">
+                            <?= $store_info['nama_toko'] ?? 'Sistem Inventori' ?>
+                        </span>
+                        
+                        <div class="relative">
+                            <button class="flex items-center space-x-2 focus:outline-none rounded-full bg-gray-100 p-1.5 hover:bg-gray-200 transition" id="user-menu-button">
+                                <span class="hidden md:inline-block text-sm text-gray-700"><?= $_SESSION['user_name'] ?? 'User' ?></span>
+                                <span class="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm">
+                                    <?= strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1)) ?>
+                                </span>
+                            </button>
+                            
+                            <div class="dropdown-menu origin-top-right absolute right-0 mt-2 w-56 rounded-xl bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none hidden z-10" id="user-menu">
+                                <div class="px-4 py-3 border-b border-gray-100">
+                                    <p class="text-sm">Login sebagai</p>
+                                    <p class="text-sm font-medium text-gray-900"><?= $_SESSION['user_name'] ?? 'User' ?></p>
+                                </div>
+                                <a href="profile.php" class="dropdown-item flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-user mr-3 text-gray-500"></i> Profil Saya
+                                </a>
+                                <a href="logout.php" class="dropdown-item flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50">
+                                    <i class="fas fa-sign-out-alt mr-3 text-red-500"></i> Logout
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <?php displayAlert(); ?>
+    <?php endif; ?>
+    
+<script>
+    // User dropdown menu toggle
+    document.addEventListener('DOMContentLoaded', function() {
+        const userMenuButton = document.getElementById('user-menu-button');
+        const userMenu = document.getElementById('user-menu');
+        
+        if (userMenuButton && userMenu) {
+            userMenuButton.addEventListener('click', function() {
+                userMenu.classList.toggle('hidden');
+                
+                // Animasi dropdown
+                if (!userMenu.classList.contains('hidden')) {
+                    userMenu.classList.add('animate-fade-in-down');
+                    setTimeout(() => {
+                        userMenu.classList.remove('animate-fade-in-down');
+                    }, 300);
+                }
+            });
+            
+            // Close menu when clicked outside
+            document.addEventListener('click', function(event) {
+                if (!userMenuButton.contains(event.target) && !userMenu.contains(event.target)) {
+                    userMenu.classList.add('hidden');
+                }
+            });
+        }
+        
+        // Mobile sidebar toggle
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const sidebar = document.getElementById('sidebar');
+        const content = document.getElementById('content');
+        
+        if (sidebarToggle && sidebar && content) {
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('-translate-x-full');
+                content.classList.toggle('pl-0');
+                content.classList.toggle('pl-64');
+            });
+        }
+    });
+    
+    // Tutup alert secara otomatis
+    document.addEventListener('DOMContentLoaded', function() {
+        const alerts = document.querySelectorAll('.alert');
+        
+        alerts.forEach(function(alert) {
+            setTimeout(function() {
+                alert.classList.add('opacity-0');
+                alert.style.transition = 'opacity 1s';
+                
+                setTimeout(function() {
+                    alert.remove();
+                }, 1000);
+            }, 5000);
+            
+            const closeButton = alert.querySelector('.alert-close');
+            if (closeButton) {
+                closeButton.addEventListener('click', function() {
+                    alert.remove();
+                });
+            }
+        });
+    });
+</script>
+</body>
+</html> 

@@ -206,6 +206,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 throw new Exception("Bahan baku tidak ditemukan");
             }
             
+            // Hanya boleh mengubah status dari pending ke approved
+            if ($bahan_baku['status'] != 'pending' && $status != $bahan_baku['status']) {
+                throw new Exception("Status hanya dapat diubah dari Pending ke Approved");
+            }
+            
+            // Pastikan status valid - hanya pending atau approved yang diperbolehkan
+            if ($status != 'pending' && $status != 'approved') {
+                $status = $bahan_baku['status']; // Kembalikan ke status asli
+            }
+            
             // Update bahan baku
             $update_query = "UPDATE bahan_baku SET qty = ?, periode = ?, harga_satuan = ?, total = ?, lokasi = ?, status = ? WHERE id_bahan_baku = ?";
             $update_stmt = mysqli_prepare($conn, $update_query);
@@ -506,6 +516,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             
             // If the bahan_baku has approved status, update stock
             if ($bahan_baku['status'] == 'approved') {
+                // Calculate the total price for retur items
+                $total_retur = $qty_retur * $bahan_baku['harga_satuan'];
+                
                 // Reduce stock by qty_retur
                 $update_stock_query = "UPDATE barang SET stok = stok - ? WHERE id_barang = ?";
                 $update_stock_stmt = mysqli_prepare($conn, $update_stock_query);
@@ -546,10 +559,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 
                 // If the original status was 'pending', we need to approve the remaining qty
                 if ($bahan_baku['status'] == 'pending') {
-                    // Update the new bahan_baku to approved
-                    $approve_query = "UPDATE bahan_baku SET status = 'approved' WHERE id_bahan_baku = ?";
+                    // Update the new bahan_baku to approved and set jumlah_masuk
+                    $approve_query = "UPDATE bahan_baku SET status = 'approved', jumlah_masuk = ? WHERE id_bahan_baku = ?";
                     $approve_stmt = mysqli_prepare($conn, $approve_query);
-                    mysqli_stmt_bind_param($approve_stmt, "i", $new_bahan_baku_id);
+                    mysqli_stmt_bind_param($approve_stmt, "ii", $remaining_qty, $new_bahan_baku_id);
                     
                     if (!mysqli_stmt_execute($approve_stmt)) {
                         throw new Exception("Gagal mengupdate status bahan baku sisa: " . mysqli_stmt_error($approve_stmt));
@@ -947,6 +960,14 @@ for ($i = 1; $i <= 4; $i++) {
         </div>
         
         <div class="p-4">
+            <!-- Information note -->
+            <div class="p-4 bg-blue-50 border-l-4 border-blue-500 mb-4">
+                <p class="text-sm text-blue-700">
+                    <strong>Catatan:</strong> Status "Approved" menunjukkan jumlah barang yang masuk ke stok, sedangkan status "Retur" menunjukkan jumlah barang yang diretur. 
+                    Total harga dihitung sesuai jumlah barang di masing-masing status (800gr = Rp 8.000, 200gr = Rp 2.000).
+                </p>
+            </div>
+            
             <div class="overflow-x-auto">
                 <table class="min-w-full bg-white bahan-baku-table">
                     <thead>
@@ -957,7 +978,7 @@ for ($i = 1; $i <= 4; $i++) {
                             <th class="py-2 px-4 text-left">Satuan</th>
                             <th class="py-2 px-4 text-left">Periode</th>
                             <th class="py-2 px-4 text-left">Harga Satuan</th>
-                            <th class="py-2 px-4 text-left">Total</th>
+                            <th class="py-2 px-4 text-left">Total Harga</th>
                             <th class="py-2 px-4 text-left">Lokasi</th>
                             <th class="py-2 px-4 text-left">Tanggal Input</th>
                             <th class="py-2 px-4 text-left">Status</th>
@@ -974,11 +995,16 @@ for ($i = 1; $i <= 4; $i++) {
                             <td class="py-2 px-4"><?= $item['nama_barang'] ?></td>
                             <td class="py-2 px-4">
                                 <?php 
-                                // For retur items, show the non-returned quantity (jumlah_masuk)
-                                if ($item['status'] == 'retur' && $item['jumlah_masuk'] > 0) {
-                                    echo $item['jumlah_masuk'];
-                                    echo ' <span class="text-xs text-gray-500">(Retur: ' . $item['jumlah_retur'] . ')</span>';
-                                } else {
+                                if ($item['status'] == 'approved') {
+                                    // For approved items, show the approved quantity
+                                    echo $item['qty'];
+                                } 
+                                elseif ($item['status'] == 'retur') {
+                                    // For retur items, show the returned quantity
+                                    echo $item['jumlah_retur'];
+                                } 
+                                else {
+                                    // For pending items, show normal quantity
                                     echo $item['qty'];
                                 }
                                 ?>
@@ -986,7 +1012,31 @@ for ($i = 1; $i <= 4; $i++) {
                             <td class="py-2 px-4"><?= $item['satuan'] ?></td>
                             <td class="py-2 px-4">Periode <?= $item['periode'] ?></td>
                             <td class="py-2 px-4"><?= formatRupiah($item['harga_satuan']) ?></td>
-                            <td class="py-2 px-4"><?= formatRupiah($item['total']) ?></td>
+                            <td class="py-2 px-4">
+                                <?php
+                                if ($item['status'] == 'retur') {
+                                    // For retur items, calculate total based on returned quantity (in thousand format)
+                                    $qty_retur = isset($item['jumlah_retur']) ? $item['jumlah_retur'] : $item['qty'];
+                                    $harga_per_gram = $item['harga_satuan'] / 1000; // Convert to per gram
+                                    $total_retur = $qty_retur * $harga_per_gram;
+                                    echo formatRupiah($total_retur);
+                                } 
+                                elseif ($item['status'] == 'approved') {
+                                    // For approved items, calculate based on approved quantity (in thousand format)
+                                    $qty_approved = isset($item['jumlah_masuk']) && $item['jumlah_masuk'] > 0 ? 
+                                                  $item['jumlah_masuk'] : $item['qty'];
+                                    $harga_per_gram = $item['harga_satuan'] / 1000; // Convert to per gram
+                                    $total_approved = $qty_approved * $harga_per_gram;
+                                    echo formatRupiah($total_approved);
+                                }
+                                else {
+                                    // For pending items, calculate based on quantity (in thousand format)
+                                    $harga_per_gram = $item['harga_satuan'] / 1000; // Convert to per gram
+                                    $total = $item['qty'] * $harga_per_gram;
+                                    echo formatRupiah($total);
+                                }
+                                ?>
+                            </td>
                             <td class="py-2 px-4"><?= $item['lokasi'] ?></td>
                             <td class="py-2 px-4"><?= date('d M Y H:i', strtotime($item['tanggal_input'])) ?></td>
                             <td class="py-2 px-4">
@@ -1120,8 +1170,8 @@ for ($i = 1; $i <= 4; $i++) {
 </div>
 
 <!-- Add Bahan Baku Modal -->
-<div id="addBahanBakuModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full">
-    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-2/3 shadow-lg rounded-md bg-white">
+<div id="addBahanBakuModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full flex items-center justify-center">
+    <div class="mx-auto p-5 border w-11/12 md:w-3/4 lg:w-2/3 shadow-lg rounded-md bg-white">
         <div class="mt-3">
             <div class="flex justify-between items-center mb-4 border-b pb-3">
                 <h3 class="text-lg leading-6 font-medium text-gray-900">Tambah Bahan Baku</h3>
@@ -1238,8 +1288,8 @@ for ($i = 1; $i <= 4; $i++) {
 </div>
 
 <!-- Delete Confirmation Modal -->
-<div id="deleteBahanBakuModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+<div id="deleteBahanBakuModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full flex items-center justify-center">
+    <div class="mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div class="mt-3 text-center">
             <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
                 <i class="fas fa-exclamation-triangle text-red-600"></i>
@@ -1266,8 +1316,8 @@ for ($i = 1; $i <= 4; $i++) {
 </div>
 
 <!-- Edit Bahan Baku Modal -->
-<div id="editBahanBakuModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-0 border w-full max-w-4xl shadow-lg rounded-md bg-white">
+<div id="editBahanBakuModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+    <div class="mx-auto p-0 border w-full max-w-4xl shadow-lg rounded-md bg-white">
         <!-- Modal Header -->
         <div class="bg-blue-50 py-3 px-6 rounded-t-md border-b border-blue-100">
             <div class="flex justify-between items-center">
@@ -1347,14 +1397,11 @@ for ($i = 1; $i <= 4; $i++) {
                             <select id="edit_status" name="status" class="w-full border border-gray-300 rounded-md py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
                             <option value="pending">Pending</option>
                             <option value="approved">Approved</option>
-                            <option value="retur">Retur</option>
-                            <option value="dibatalkan">Dibatalkan</option>
                         </select>
                             
-                            <!-- Retur Info -->
-                        <div id="retur_info" class="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md text-xs text-yellow-700 hidden">
-                            <p><i class="fas fa-info-circle mr-1"></i> <strong>Catatan:</strong> Setelah mengubah status menjadi "Retur", gunakan tombol Retur pada tabel untuk menyelesaikan proses retur.</p>
-                            </div>
+                        <div class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md text-xs text-blue-700">
+                            <p><i class="fas fa-info-circle mr-1"></i> <strong>Catatan:</strong> Status hanya dapat diubah dari Pending ke Approved. Untuk proses retur, gunakan tombol Retur pada tabel.</p>
+                        </div>
                         </div>
                         
                         <!-- Status Info Box -->
@@ -1383,8 +1430,8 @@ for ($i = 1; $i <= 4; $i++) {
 </div>
 
 <!-- View Bahan Baku Modal -->
-<div id="viewBahanBakuModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full">
-    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-2/3 shadow-lg rounded-md bg-white">
+<div id="viewBahanBakuModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full flex items-center justify-center">
+    <div class="mx-auto p-5 border w-11/12 md:w-3/4 lg:w-2/3 shadow-lg rounded-md bg-white">
         <div class="mt-3">
             <div class="flex justify-between items-center border-b pb-3">
                 <h3 class="text-lg font-medium text-gray-900" id="view_modal_title">Detail Bahan Baku</h3>
@@ -1536,7 +1583,7 @@ for ($i = 1; $i <= 4; $i++) {
 </div>
 
 <!-- Retur Modal -->
-<div id="returModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+<div id="returModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center hidden">
     <div class="bg-white rounded-lg shadow-lg w-full max-w-md">
         <div class="bg-yellow-50 py-3 px-4 rounded-t-lg flex justify-between items-center border-b border-yellow-100">
             <h3 class="text-yellow-800 font-medium flex items-center">
@@ -1637,21 +1684,26 @@ for ($i = 1; $i <= 4; $i++) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
         
-        // Tampilkan modal
+        // Remove hidden class and ensure flex display
         modal.classList.remove('hidden');
-        
-        // Atur posisi di tengah
         modal.style.display = 'flex';
+        
+        // Make sure modal is centered
         modal.style.alignItems = 'center';
         modal.style.justifyContent = 'center';
         
-        // Atur posisi konten modal
-        const modalContent = modal.querySelector('.relative.top-20');
+        // Fix overflow for body to prevent background scrolling
+        document.body.style.overflow = 'hidden';
+        
+        // Set max height for modal content to prevent overflow
+        const modalContent = modal.querySelector('.mx-auto');
         if (modalContent) {
-            modalContent.style.margin = '0 auto';
-            modalContent.style.top = '0';
+            // Calculate maximum height (90% of viewport)
+            const maxHeight = window.innerHeight * 0.9;
+            modalContent.style.maxHeight = maxHeight + 'px';
+            modalContent.style.overflow = 'auto';
             
-            // Untuk modal besar, pastikan ukurannya sesuai
+            // For large modals, ensure proper width
             if (modalId === 'addBahanBakuModal' || 
                 modalId === 'editBahanBakuModal' || 
                 modalId === 'viewBahanBakuModal') {
@@ -1668,6 +1720,9 @@ for ($i = 1; $i <= 4; $i++) {
         
         modal.classList.add('hidden');
         modal.style.display = 'none';
+        
+        // Restore body scrolling
+        document.body.style.overflow = '';
     }
     
     // Delete bahan baku function
@@ -1922,14 +1977,19 @@ for ($i = 1; $i <= 4; $i++) {
             const nilaiRetur = hargaSatuan * jumlahRetur;
             const nilaiMasuk = hargaSatuan * jumlahMasuk;
             
-            document.getElementById('view_nilai_awal').textContent = formatRupiah(nilaiAwal);
-            document.getElementById('view_nilai_awal_detail').textContent = `${totalQty} ${bahan.satuan} × ${formatRupiah(hargaSatuan)}`;
+            // Untuk nilai total biaya, gunakan perhitungan sesuai tampilan tabel, dibagi 1000
+            const nilaiAwalRibu = nilaiAwal / 1000;
+            const nilaiReturRibu = nilaiRetur / 1000;
+            const nilaiMasukRibu = nilaiMasuk / 1000;
             
-            document.getElementById('view_nilai_retur').textContent = formatRupiah(nilaiRetur);
-            document.getElementById('view_nilai_retur_detail').textContent = `${jumlahRetur} ${bahan.satuan} × ${formatRupiah(hargaSatuan)}`;
+            document.getElementById('view_nilai_awal').textContent = formatRupiah(nilaiAwalRibu);
+            document.getElementById('view_nilai_awal_detail').textContent = `${totalQty} ${bahan.satuan}`;
             
-            document.getElementById('view_nilai_masuk').textContent = formatRupiah(nilaiMasuk);
-            document.getElementById('view_nilai_masuk_detail').textContent = `${jumlahMasuk} ${bahan.satuan} × ${formatRupiah(hargaSatuan)}`;
+            document.getElementById('view_nilai_retur').textContent = formatRupiah(nilaiReturRibu);
+            document.getElementById('view_nilai_retur_detail').textContent = `${jumlahRetur} ${bahan.satuan}`;
+            
+            document.getElementById('view_nilai_masuk').textContent = formatRupiah(nilaiMasukRibu);
+            document.getElementById('view_nilai_masuk_detail').textContent = `${jumlahMasuk} ${bahan.satuan}`;
                 
             } else if (bahan.status === 'approved') {
             hideElement('view_retur_info');
@@ -1950,11 +2010,14 @@ for ($i = 1; $i <= 4; $i++) {
             const totalQty = parseInt(bahan.qty) || 0;
             const nilaiTotal = hargaSatuan * totalQty;
             
-            document.getElementById('view_nilai_awal').textContent = formatRupiah(nilaiTotal);
-            document.getElementById('view_nilai_awal_detail').textContent = `${totalQty} ${bahan.satuan} × ${formatRupiah(hargaSatuan)}`;
+            // Untuk nilai total biaya, gunakan perhitungan sesuai tampilan tabel, dibagi 1000
+            const nilaiTotalRibu = nilaiTotal / 1000;
             
-            document.getElementById('view_nilai_masuk').textContent = formatRupiah(nilaiTotal);
-            document.getElementById('view_nilai_masuk_detail').textContent = `${totalQty} ${bahan.satuan} × ${formatRupiah(hargaSatuan)}`;
+            document.getElementById('view_nilai_awal').textContent = formatRupiah(nilaiTotalRibu);
+            document.getElementById('view_nilai_awal_detail').textContent = `${totalQty} ${bahan.satuan}`;
+            
+            document.getElementById('view_nilai_masuk').textContent = formatRupiah(nilaiTotalRibu);
+            document.getElementById('view_nilai_masuk_detail').textContent = `${totalQty} ${bahan.satuan}`;
             
         } else if (bahan.status === 'pending') {
             hideElement('view_retur_info');
@@ -1970,8 +2033,11 @@ for ($i = 1; $i <= 4; $i++) {
             const totalQty = parseInt(bahan.qty) || 0;
             const nilaiTotal = hargaSatuan * totalQty;
             
-            document.getElementById('view_nilai_awal').textContent = formatRupiah(nilaiTotal);
-            document.getElementById('view_nilai_awal_detail').textContent = `${totalQty} ${bahan.satuan} × ${formatRupiah(hargaSatuan)}`;
+            // Untuk nilai total biaya, gunakan perhitungan sesuai tampilan tabel, dibagi 1000
+            const nilaiTotalRibu = nilaiTotal / 1000;
+            
+            document.getElementById('view_nilai_awal').textContent = formatRupiah(nilaiTotalRibu);
+            document.getElementById('view_nilai_awal_detail').textContent = `${totalQty} ${bahan.satuan}`;
         } else if (bahan.status === 'dibatalkan') {
             hideElement('view_retur_info');
             hideElement('view_approved_info');
@@ -2003,8 +2069,11 @@ for ($i = 1; $i <= 4; $i++) {
             const totalQty = parseInt(bahan.qty) || 0;
             const nilaiTotal = hargaSatuan * totalQty;
             
-            document.getElementById('view_nilai_awal').textContent = formatRupiah(nilaiTotal);
-            document.getElementById('view_nilai_awal_detail').textContent = `${totalQty} ${bahan.satuan} × ${formatRupiah(hargaSatuan)}`;
+            // Untuk nilai total biaya, gunakan perhitungan sesuai tampilan tabel, dibagi 1000
+            const nilaiTotalRibu = nilaiTotal / 1000;
+            
+            document.getElementById('view_nilai_awal').textContent = formatRupiah(nilaiTotalRibu);
+            document.getElementById('view_nilai_awal_detail').textContent = `${totalQty} ${bahan.satuan}`;
         }
         }
         
@@ -2185,11 +2254,10 @@ for ($i = 1; $i <= 4; $i++) {
         const editStatusSelect = document.getElementById('edit_status');
         if (editStatusSelect) {
             editStatusSelect.addEventListener('change', function() {
-                const returInfo = document.getElementById('retur_info');
-                if (this.value === 'retur') {
-                    returInfo.classList.remove('hidden');
-                } else {
-                    returInfo.classList.add('hidden');
+                // Only allow changing from pending to approved
+                if (this.value !== 'pending' && this.value !== 'approved') {
+                    alert('Status hanya dapat diubah dari Pending ke Approved');
+                    this.value = 'pending'; // Reset to pending
                 }
             });
         }
@@ -2212,14 +2280,17 @@ for ($i = 1; $i <= 4; $i++) {
                     document.getElementById('edit_periode').value = bahan.periode;
                     document.getElementById('edit_harga_satuan').value = bahan.harga_satuan;
                     document.getElementById('edit_lokasi').value = bahan.lokasi;
-                    document.getElementById('edit_status').value = bahan.status;
                     
-                    // Show/hide retur info based on status
-                    const returInfo = document.getElementById('retur_info');
-                    if (bahan.status === 'retur') {
-                        returInfo.classList.remove('hidden');
+                    // Set status value and handle status dropdown based on current status
+                    const statusSelect = document.getElementById('edit_status');
+                    statusSelect.value = bahan.status;
+                    
+                    // If status is not pending, disable status dropdown and show message
+                    if (bahan.status !== 'pending') {
+                        statusSelect.disabled = true;
+                        alert('Status hanya dapat diubah dari "Pending" ke "Approved".');
                     } else {
-                        returInfo.classList.add('hidden');
+                        statusSelect.disabled = false;
                     }
                     
                     // Show modal
