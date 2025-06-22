@@ -436,9 +436,11 @@ if (isset($_GET['action']) && $_GET['action'] === 'check_related_supplier' && is
                             <button class="text-blue-500 hover:text-blue-700 edit-supplier-btn" data-id="<?= $supplier['id_supplier'] ?>">
                             <i class="fas fa-edit"></i>
                         </button>
+                            <?php if (hasDeletePermission()): ?>
                             <button class="text-red-500 hover:text-red-700" onclick="deleteSupplier(<?= $supplier['id_supplier'] ?>, '<?= addslashes($supplier['nama_supplier']) ?>')">
                             <i class="fas fa-trash"></i>
                         </button>
+                            <?php endif; ?>
                         </div>
                         <?php else: ?>
                         <div class="text-gray-400">

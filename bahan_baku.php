@@ -13,6 +13,12 @@ function formatRupiah($angka) {
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['add_bahan_baku'])) {
+        // Check if user has permission to add bahan baku
+        if ($_SESSION['user_role'] === 'kasir') {
+            setAlert("error", "Anda tidak memiliki akses untuk menambahkan bahan baku");
+            header("Location: bahan_baku.php");
+            exit();
+        }
         // Add new bahan baku
         $id_barang_array = isset($_POST['id_barang']) ? $_POST['id_barang'] : [];
         $qty_array = isset($_POST['qty']) ? $_POST['qty'] : [];
@@ -824,8 +830,8 @@ for ($i = 1; $i <= 4; $i++) {
     $total_row = mysqli_fetch_assoc($total_result);
     $total_per_periode[$i] = $total_row['total_nilai'] ? $total_row['total_nilai'] : 0;
     
-    // Get total for retur items
-    $retur_query = "SELECT SUM(total) as total_retur FROM bahan_baku WHERE periode = $i AND status = 'retur'";
+    // Get total for retur items - calculate based on jumlah_retur and harga_satuan
+    $retur_query = "SELECT SUM(jumlah_retur * harga_satuan) as total_retur FROM bahan_baku WHERE periode = $i AND status = 'retur'";
     $retur_result = mysqli_query($conn, $retur_query);
     $retur_row = mysqli_fetch_assoc($retur_result);
     if ($retur_row['total_retur']) {
@@ -876,7 +882,7 @@ for ($i = 1; $i <= 4; $i++) {
             <a href="print_bahan_baku.php" target="_blank" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-md flex items-center">
                 <i class="fas fa-print mr-2"></i> Cetak
             </a>
-            <?php if (!isset($VIEW_ONLY) || $VIEW_ONLY !== true): ?>
+            <?php if ((!isset($VIEW_ONLY) || $VIEW_ONLY !== true) && $_SESSION['user_role'] !== 'kasir'): ?>
             <button type="button" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md" onclick="showModal('addBahanBakuModal')">
                 <i class="fas fa-plus-circle mr-2"></i> Tambah Bahan Baku
             </button>
@@ -1015,24 +1021,21 @@ for ($i = 1; $i <= 4; $i++) {
                             <td class="py-2 px-4">
                                 <?php
                                 if ($item['status'] == 'retur') {
-                                    // For retur items, calculate total based on returned quantity (in thousand format)
+                                    // For retur items, calculate total based on returned quantity
                                     $qty_retur = isset($item['jumlah_retur']) ? $item['jumlah_retur'] : $item['qty'];
-                                    $harga_per_gram = $item['harga_satuan'] / 1000; // Convert to per gram
-                                    $total_retur = $qty_retur * $harga_per_gram;
+                                    $total_retur = $qty_retur * $item['harga_satuan'];
                                     echo formatRupiah($total_retur);
                                 } 
                                 elseif ($item['status'] == 'approved') {
-                                    // For approved items, calculate based on approved quantity (in thousand format)
+                                    // For approved items, calculate based on approved quantity
                                     $qty_approved = isset($item['jumlah_masuk']) && $item['jumlah_masuk'] > 0 ? 
                                                   $item['jumlah_masuk'] : $item['qty'];
-                                    $harga_per_gram = $item['harga_satuan'] / 1000; // Convert to per gram
-                                    $total_approved = $qty_approved * $harga_per_gram;
+                                    $total_approved = $qty_approved * $item['harga_satuan'];
                                     echo formatRupiah($total_approved);
                                 }
                                 else {
-                                    // For pending items, calculate based on quantity (in thousand format)
-                                    $harga_per_gram = $item['harga_satuan'] / 1000; // Convert to per gram
-                                    $total = $item['qty'] * $harga_per_gram;
+                                    // For pending items, calculate based on quantity
+                                    $total = $item['qty'] * $item['harga_satuan'];
                                     echo formatRupiah($total);
                                 }
                                 ?>

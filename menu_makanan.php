@@ -467,85 +467,89 @@ if ($table_check->num_rows > 0) {
             <input type="hidden" name="id_menu" value="<?= $id_menu ?>">
             <?php endif; ?>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="mb-4">
-                    <label for="nama_menu" class="block text-gray-700 text-sm font-medium mb-2">Nama Menu</label>
-                    <input type="text" id="nama_menu" name="nama_menu" value="<?= htmlspecialchars($nama_menu) ?>" required 
-                           class="shadow-sm border border-gray-300 rounded-md w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="form-group transition-all duration-200">
+                    <label for="nama_menu" class="block text-sm font-medium text-gray-700 mb-1">Nama Menu</label>
+                    <input type="text" id="nama_menu" name="nama_menu" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" value="<?= htmlspecialchars($nama_menu) ?>" required>
                 </div>
                 
-                <div class="mb-4">
-                    <label for="harga" class="block text-gray-700 text-sm font-medium mb-2">Harga Jual</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-600">
-                            Rp
-                        </span>
-                        <input type="number" id="harga" name="harga" value="<?= $harga ?>" required min="0" step="100"
-                               class="shadow-sm border border-gray-300 rounded-md w-full py-2 pl-10 pr-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <div class="form-group transition-all duration-200">
+                    <label for="harga" class="block text-sm font-medium text-gray-700 mb-1">Harga Jual</label>
+                    <div class="flex items-center">
+                        <span class="bg-gray-100 px-3 py-2 text-gray-500 border border-r-0 border-gray-300 rounded-l-lg">Rp</span>
+                        <input type="number" id="harga" name="harga" min="0" step="1000" class="w-full py-2 px-3 border border-gray-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" value="<?= htmlspecialchars($harga) ?>" required>
+                    </div>
+                </div>
+                
+                <div class="form-group transition-all duration-200 md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Bahan-bahan</label>
+                    <div id="bahanContainer" class="mb-2 border border-gray-300 rounded-md p-3 bg-gray-50">
+                        <!-- Bahan items will be added here -->
+                    </div>
+                    <input type="hidden" id="bahanInput" name="bahan" value="<?= htmlspecialchars($bahan) ?>">
+                    <button type="button" id="addBahanBtn" class="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded-md text-sm transition-colors duration-200">
+                        <i class="fas fa-plus mr-1"></i> Tambah Bahan
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="mb-4">
+                        <label for="harga_modal" class="block text-gray-700 text-sm font-medium mb-2">Harga Modal (otomatis)</label>
+                        <div class="flex items-center">
+                            <span class="bg-gray-100 px-3 py-2 text-gray-500 border border-r-0 border-gray-300 rounded-l-lg">Rp</span>
+                            <input type="number" id="harga_modal" name="harga_modal" value="<?= $harga_modal ?>" 
+                                   class="shadow-sm border border-gray-300 rounded-r-lg w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="keuntungan" class="block text-gray-700 text-sm font-medium mb-2">Keuntungan (otomatis)</label>
+                        <div class="flex items-center">
+                            <span class="bg-gray-100 px-3 py-2 text-gray-500 border border-r-0 border-gray-300 rounded-l-lg">Rp</span>
+                            <input type="number" id="keuntungan" name="keuntungan" value="<?= $keuntungan ?>" 
+                                   class="shadow-sm border border-gray-300 rounded-r-lg w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
                     </div>
                 </div>
                 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="mb-4">
-                    <label for="harga_modal" class="block text-gray-700 text-sm font-medium mb-2">Harga Modal (otomatis)</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-600">
-                            Rp
-                        </span>
-                        <input type="number" id="harga_modal" name="harga_modal" value="<?= $harga_modal ?>" 
-                               class="shadow-sm border border-gray-300 rounded-md w-full py-2 pl-10 pr-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <div class="form-group transition-all duration-200">
+                    <label for="deskripsi" class="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
+                    <textarea id="deskripsi" name="deskripsi" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"><?= htmlspecialchars($deskripsi) ?></textarea>
+                </div>
+                
+                <div class="form-group transition-all duration-200">
+                    <label for="foto" class="block text-sm font-medium text-gray-700 mb-1">Foto Menu</label>
+                    <div class="flex items-center">
+                        <label class="w-full flex flex-col items-center px-4 py-2 bg-white text-blue-500 rounded-lg border border-blue-500 border-dashed cursor-pointer hover:bg-blue-50 transition-colors duration-200">
+                            <span class="flex items-center">
+                                <i class="fas fa-cloud-upload-alt mr-2"></i>
+                                <span>Pilih Gambar</span>
+                            </span>
+                            <input type="file" id="foto" name="foto" class="hidden" accept="image/*">
+                        </label>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Format: JPG, JPEG, PNG, GIF. Maks: 2MB</p>
+                    
+                    <?php if ($edit_mode && !empty($foto)): ?>
+                    <div class="mt-3">
+                        <p class="text-sm text-gray-600 mb-1">Foto saat ini:</p>
+                        <div class="relative group">
+                            <img src="<?= $uploadDir . $foto ?>" alt="<?= htmlspecialchars($nama_menu) ?>" class="w-32 h-32 object-cover rounded-md border border-gray-200">
+                            <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200 rounded-md">
+                                <span class="text-white text-xs">Foto saat ini</span>
                             </div>
-                </div>
-                
-                <div class="mb-4">
-                    <label for="keuntungan" class="block text-gray-700 text-sm font-medium mb-2">Keuntungan (otomatis)</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-600">
-                            Rp
-                        </span>
-                        <input type="number" id="keuntungan" name="keuntungan" value="<?= $keuntungan ?>" 
-                               class="shadow-sm border border-gray-300 rounded-md w-full py-2 pl-10 pr-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
-                    </div>
-                </div>
-                
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-medium mb-2">Bahan-bahan</label>
-                <div id="bahanContainer" class="mb-2 border border-gray-300 rounded-md p-3 bg-gray-50">
-                    <!-- Bahan items will be added here -->
-                        </div>
-                <input type="hidden" id="bahanInput" name="bahan" value="<?= htmlspecialchars($bahan) ?>">
-                <button type="button" id="addBahanBtn" class="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded-md text-sm transition-colors duration-200">
-                    <i class="fas fa-plus mr-1"></i> Tambah Bahan
-                </button>
-                </div>
-                
-            <div class="mb-4">
-                <label for="deskripsi" class="block text-gray-700 text-sm font-medium mb-2">Deskripsi</label>
-                <textarea id="deskripsi" name="deskripsi" rows="3" 
-                       class="shadow-sm border border-gray-300 rounded-md w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"><?= htmlspecialchars($deskripsi) ?></textarea>
-                </div>
-                
-            <div class="mb-4">
-                <label for="foto" class="block text-gray-700 text-sm font-medium mb-2">Foto Menu</label>
-                <?php if (!empty($foto) && file_exists($uploadDir . $foto)): ?>
-                <div class="mb-2">
-                    <img src="<?= $uploadDir . $foto ?>" alt="<?= htmlspecialchars($nama_menu) ?>" class="w-32 h-32 object-cover rounded-md border">
-                    <p class="text-sm text-gray-600">Foto saat ini: <?= $foto ?></p>
                     </div>
                     <?php endif; ?>
-                <input type="file" id="foto" name="foto" accept="image/*" 
-                       class="shadow-sm border border-gray-300 rounded-md w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <p class="text-xs text-gray-500 mt-1">Format: JPG, JPEG, PNG, GIF. Ukuran max: 2MB.</p>
+                </div>
             </div>
             
-            <div class="flex justify-end space-x-2 mt-6">
-                <a href="menu_makanan.php" class="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-md text-sm transition-colors duration-200">
-                    Batal
+            <div class="flex justify-end mt-6 space-x-2">
+                <a href="menu_makanan.php" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition duration-200 flex items-center">
+                    <i class="fas fa-times mr-1"></i> Batal
                 </a>
-                <button type="submit" name="submit_menu" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md text-sm transition-colors duration-200">
-                    <?= isset($edit_mode) && $edit_mode ? 'Update Menu' : 'Simpan Menu' ?>
+                <button type="submit" name="submit_menu" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200 flex items-center">
+                    <i class="fas fa-save mr-1"></i> <?= $edit_mode ? 'Update Menu' : 'Simpan Menu' ?>
                 </button>
             </div>
         </form>
@@ -635,14 +639,16 @@ if ($table_check->num_rows > 0) {
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-sm text-gray-600 font-medium">Keuntungan:</span>
-                            <span class="text-sm font-semibold text-blue-600"><?= formatRupiah($menu['keuntungan']) ?></span>
+                            <span class="text-sm font-semibold text-blue-600"><?= formatRupiah(abs($menu['keuntungan'])) ?></span>
                         </div>
                         <div class="flex justify-between items-center mt-1">
                             <span class="text-sm text-gray-600 font-medium">Persentase:</span>
                             <?php 
                             $persentase = 0;
                             if ($menu['harga_modal'] > 0) {
-                                $persentase = ($menu['keuntungan'] / $menu['harga_modal']) * 100;
+                                // Make sure keuntungan is always treated as positive for percentage calculation
+                                $keuntunganValue = abs($menu['keuntungan']);
+                                $persentase = ($keuntunganValue / $menu['harga_modal']) * 100;
                             }
                             ?>
                             <span class="text-sm font-semibold <?= $persentase >= 30 ? 'text-green-600' : 'text-yellow-600' ?>"><?= number_format($persentase, 1) ?>%</span>
@@ -1228,7 +1234,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const hargaJual = parseFloat(hargaInput.value || 0);
                 const hargaModal = parseFloat(hargaModalInput.value || 0);
-                const keuntungan = hargaJual - hargaModal;
+                // Calculate profit - ensure it's always positive
+                const keuntungan = Math.abs(hargaJual - hargaModal);
                 
                 keuntunganInput.value = keuntungan.toFixed(0);
             } catch (error) {

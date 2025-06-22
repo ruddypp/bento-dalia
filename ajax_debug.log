@@ -40,3 +40,18 @@
 [2025-06-16 12:06:18] AJAX request started: {"supplier_id":"3"}
 [2025-06-16 12:06:18] Processing supplier ID: 3
 [2025-06-16 12:06:18] Sending response: {"success":true,"items":[{"id_barang":13,"nama_barang":"kopi","satuan":"pack","harga":"3000.00"},{"id_barang":14,"nama_barang":"gula","satuan":"gr","harga":"3000.00"},{"id_barang":15,"nama_barang":"teh","satuan":"pack","harga":"4000.00"},{"id_barang":16,"nama_barang":"susu","satuan":"pack","harga":"10000.00"}],"supplier":{"id_supplier":3,"nama_supplier":"rudy","alamat":"jalan aren 1","kontak":"0812212121"}}
+[2025-06-21 11:40:21] AJAX request started: {"supplier_id":"4"}
+[2025-06-21 11:40:21] Processing supplier ID: 4
+[2025-06-21 11:40:21] Sending response: {"success":true,"items":[{"id_barang":0,"nama_barang":"ayam dadu","satuan":"gram","harga":0}],"supplier":{"id_supplier":4,"nama_supplier":"rojak","alamat":"w","kontak":"s"}}
+[2025-06-21 12:08:44] AJAX request started: {"supplier_id":"4"}
+[2025-06-21 12:08:44] Processing supplier ID: 4
+[2025-06-21 12:08:44] Sending response: {"success":true,"items":[{"id_barang":18,"nama_barang":"ayam dadu","satuan":"gram","harga":"50000.00"}],"supplier":{"id_supplier":4,"nama_supplier":"rojak","alamat":"w","kontak":"s"}}
+[2025-06-21 12:10:56] AJAX request started: {"supplier_id":"3"}
+[2025-06-21 12:10:56] Processing supplier ID: 3
+[2025-06-21 12:10:56] Sending response: {"success":true,"items":[{"id_barang":0,"nama_barang":"gula","satuan":"gr","harga":0},{"id_barang":0,"nama_barang":"kopi","satuan":"pack","harga":0},{"id_barang":0,"nama_barang":"teh","satuan":"pack","harga":0},{"id_barang":0,"nama_barang":"susu","satuan":"pack","harga":0}],"supplier":{"id_supplier":3,"nama_supplier":"rudy","alamat":"jalan aren 1","kontak":"0812212121"}}
+[2025-06-21 12:17:14] AJAX request started: {"supplier_id":"4"}
+[2025-06-21 12:17:14] Processing supplier ID: 4
+[2025-06-21 12:17:14] Sending response: {"success":true,"items":[{"id_barang":0,"nama_barang":"ayam dadu","satuan":"gram","harga":0}],"supplier":{"id_supplier":4,"nama_supplier":"rojak","alamat":"w","kontak":"s"}}
+[2025-06-21 19:46:30] AJAX request started: {"supplier_id":"4"}
+[2025-06-21 19:46:30] Processing supplier ID: 4
+[2025-06-21 19:46:30] Sending response: {"success":true,"items":[{"id_barang":20,"nama_barang":"ayam dadu","satuan":"gram","harga":"45.00"}],"supplier":{"id_supplier":4,"nama_supplier":"rojak","alamat":"w","kontak":"s"}}

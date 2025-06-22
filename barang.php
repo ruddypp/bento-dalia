@@ -677,7 +677,7 @@ function isAdmin() {
                             <button class="text-blue-500 hover:text-blue-700 edit-button" data-id="<?= $row['id_barang'] ?>">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <?php if ($_SESSION['user_role'] !== 'kasir' && $_SESSION['user_role'] !== 'crew'): ?>
+                            <?php if (hasDeletePermission()): ?>
                             <button class="text-red-500 hover:text-red-700 delete-button" data-id="<?= $row['id_barang'] ?>" data-nama="<?= htmlspecialchars($row['nama_barang']) ?>">
                                 <i class="fas fa-trash"></i>
                             </button>

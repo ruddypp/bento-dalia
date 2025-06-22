@@ -158,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_menu']) && (!i
     $deskripsi = trim($_POST['deskripsi']);
     $kategori = 'minuman'; // Kategori tetap minuman
     $harga_modal = isset($_POST['harga_modal']) ? trim($_POST['harga_modal']) : 0;
-    $keuntungan = isset($_POST['keuntungan']) ? trim($_POST['keuntungan']) : 0;
+    $keuntungan = isset($_POST['keuntungan']) ? abs(trim($_POST['keuntungan'])) : 0; // Ensure keuntungan is positive
     
     // Validasi data
     if (empty($nama_menu)) {
@@ -464,12 +464,10 @@ if ($table_check->num_rows > 0) {
                 </div>
                 
                 <div class="form-group transition-all duration-200">
-                    <label for="harga" class="block text-sm font-medium text-gray-700 mb-1">Harga Jual (Rp)</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="text-gray-500">Rp</span>
-                        </div>
-                        <input type="number" id="harga" name="harga" min="0" step="1000" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" value="<?= htmlspecialchars($harga) ?>" required>
+                    <label for="harga" class="block text-sm font-medium text-gray-700 mb-1">Harga Jual</label>
+                    <div class="flex items-center">
+                        <span class="bg-gray-100 px-3 py-2 text-gray-500 border border-r-0 border-gray-300 rounded-l-lg">Rp</span>
+                        <input type="number" id="harga" name="harga" min="0" step="1000" class="w-full py-2 px-3 border border-gray-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" value="<?= htmlspecialchars($harga) ?>" required>
                     </div>
                 </div>
                 
@@ -487,23 +485,19 @@ if ($table_check->num_rows > 0) {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="mb-4">
                         <label for="harga_modal" class="block text-gray-700 text-sm font-medium mb-2">Harga Modal (otomatis)</label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-600">
-                                Rp
-                            </span>
+                        <div class="flex items-center">
+                            <span class="bg-gray-100 px-3 py-2 text-gray-500 border border-r-0 border-gray-300 rounded-l-lg">Rp</span>
                             <input type="number" id="harga_modal" name="harga_modal" value="<?= $harga_modal ?>" 
-                                   class="shadow-sm border border-gray-300 rounded-md w-full py-2 pl-10 pr-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                   class="shadow-sm border border-gray-300 rounded-r-lg w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
                     </div>
                     
                     <div class="mb-4">
                         <label for="keuntungan" class="block text-gray-700 text-sm font-medium mb-2">Keuntungan (otomatis)</label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-600">
-                                Rp
-                            </span>
+                        <div class="flex items-center">
+                            <span class="bg-gray-100 px-3 py-2 text-gray-500 border border-r-0 border-gray-300 rounded-l-lg">Rp</span>
                             <input type="number" id="keuntungan" name="keuntungan" value="<?= $keuntungan ?>" 
-                                   class="shadow-sm border border-gray-300 rounded-md w-full py-2 pl-10 pr-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                   class="shadow-sm border border-gray-300 rounded-r-lg w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
                     </div>
                 </div>
@@ -635,14 +629,16 @@ if ($table_check->num_rows > 0) {
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-sm text-gray-600 font-medium">Keuntungan:</span>
-                            <span class="text-sm font-semibold text-blue-600"><?= formatRupiah($menu['keuntungan']) ?></span>
+                            <span class="text-sm font-semibold text-blue-600"><?= formatRupiah(abs($menu['keuntungan'])) ?></span>
                         </div>
                         <div class="flex justify-between items-center mt-1">
                             <span class="text-sm text-gray-600 font-medium">Persentase:</span>
                             <?php 
                             $persentase = 0;
                             if ($menu['harga_modal'] > 0) {
-                                $persentase = ($menu['keuntungan'] / $menu['harga_modal']) * 100;
+                                // Make sure keuntungan is always treated as positive for percentage calculation
+                                $keuntunganValue = abs($menu['keuntungan']);
+                                $persentase = ($keuntunganValue / $menu['harga_modal']) * 100;
                             }
                             ?>
                             <span class="text-sm font-semibold <?= $persentase >= 30 ? 'text-green-600' : 'text-yellow-600' ?>"><?= number_format($persentase, 1) ?>%</span>
@@ -909,9 +905,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // Get modal and harga data
-                const hargaModal = card.querySelector('.text-sm.font-semibold.text-gray-700')?.textContent || '';
-                const hargaJual = card.querySelector('.text-sm.font-semibold.text-blue-600')?.textContent || '';
-                const keuntungan = card.querySelector('.text-sm.font-semibold.text-blue-600')?.textContent || '';
+                const hargaModal = card.querySelector('.flex.justify-between.items-center:nth-child(1) .text-sm.font-semibold')?.textContent || '';
+                const hargaJual = card.querySelector('.flex.justify-between.items-center:nth-child(2) .text-sm.font-semibold')?.textContent || '';
+                const keuntungan = card.querySelector('.flex.justify-between.items-center:nth-child(3) .text-sm.font-semibold')?.textContent || '';
                 
                 const detailTitle = document.getElementById('detailTitle');
                 const detailContent = document.getElementById('detailContent');
@@ -1231,7 +1227,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const hargaJual = parseFloat(hargaInput.value || 0);
                 const hargaModal = parseFloat(hargaModalInput.value || 0);
-                const keuntungan = hargaJual - hargaModal;
+                // Calculate profit - ensure it's always positive
+                const keuntungan = Math.abs(hargaJual - hargaModal);
                 
                 keuntunganInput.value = keuntungan.toFixed(0);
             } catch (error) {

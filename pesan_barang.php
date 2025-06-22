@@ -111,7 +111,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     }
                     
                     $periode = (int)$_POST['periode'][$key];
-                    $harga_satuan = (float)$_POST['harga_satuan'][$key];
+                    $total_harga = (float)$_POST['total_harga'][$key];
+                    
+                    // Calculate harga_satuan from total_harga and qty
+                    $harga_satuan = $qty > 0 ? $total_harga / $qty : 0;
                     $lokasi = sanitize($_POST['lokasi'][$key]);
                     
                     // Check if this is a new item (id_barang = 0)
@@ -136,8 +139,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         logActivity($user_id, "Menambahkan barang baru dari pesanan: $new_item_name");
                     }
                     
-                    // Use harga_satuan directly as the total
-                    $total = $harga_satuan;
+                    // Use total_harga as the total
+                    $total = $total_harga;
                     $total_pesanan += $total;
                     $item_count++;
                     
@@ -145,7 +148,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $detail_query = "INSERT INTO pesanan_detail (id_pesanan, id_barang, qty, periode, harga_satuan, total, lokasi) 
                                     VALUES (?, ?, ?, ?, ?, ?, ?)";
                     $detail_stmt = mysqli_prepare($conn, $detail_query);
-                    // harga_satuan now represents the total price directly
                     mysqli_stmt_bind_param($detail_stmt, "iiiddds", $id_pesanan, $id_barang, $qty, $periode, $harga_satuan, $total, $lokasi);
                     
                     if (!mysqli_stmt_execute($detail_stmt)) {
@@ -166,8 +168,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         $id_barang, 
                         $qty, 
                         $periode, 
-                        $harga_satuan,  // Now represents the total price directly
-                        $total,  // Same as harga_satuan
+                        $harga_satuan,  // Calculated unit price (total_harga / qty)
+                        $total,         // Total price as entered by user
                         $lokasi, 
                         $user_id,
                         $id_pesanan
@@ -530,9 +532,11 @@ $total_pages = ceil($total_records / $records_per_page);
                                 <i class="fas fa-edit"></i>
                             </button>
                             
+                            <?php if (hasDeletePermission()): ?>
                             <button type="button" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md" onclick="confirmDelete(<?= $pesanan['id_pesanan'] ?>)">
                                 <i class="fas fa-trash"></i>
                             </button>
+                            <?php endif; ?>
                             <?php endif; ?>
                         </div>
                     </td>
@@ -672,7 +676,10 @@ $total_pages = ceil($total_records / $records_per_page);
                 
                 <div class="mt-6">
                     <h4 class="text-md font-medium text-gray-800 mb-2">Detail Item Pesanan</h4>
-                    <p class="text-sm text-gray-600 mb-3">Masukkan harga total langsung di kolom "Harga Total" tanpa perlu menghitung dari jumlah barang.</p>
+                    <p class="text-sm text-gray-600 mb-3">Masukkan harga total langsung di kolom "Harga Total" sesuai dengan harga pasar saat ini. Harga satuan akan dihitung otomatis berdasarkan jumlah barang yang diinput.</p>
+                    <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-3 mb-4 rounded">
+                        <p class="text-sm"><i class="fas fa-info-circle mr-2"></i> <strong>Catatan:</strong> Sistem akan menghitung harga satuan secara otomatis dengan rumus: Harga Total ÷ Jumlah Barang.</p>
+                    </div>
                     
                     <div class="overflow-x-auto">
                         <table class="min-w-full bg-white border">
@@ -682,8 +689,8 @@ $total_pages = ceil($total_records / $records_per_page);
                                     <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
                                     <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Periode</th>
                                     <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Harga Total</th>
+                                    <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Harga Satuan</th>
                                     <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lokasi</th>
-                                    <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Preview</th>
                                     <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                                 </tr>
                             </thead>
@@ -707,16 +714,16 @@ $total_pages = ceil($total_records / $records_per_page);
                                         </select>
                                     </td>
                                     <td class="py-2 px-2">
-                                        <input type="number" name="harga_satuan[]" class="harga-input shadow-sm border border-gray-300 rounded w-full py-1 px-2 text-gray-700 text-sm leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" min="0" step="100" required>
+                                        <input type="number" name="total_harga[]" class="total-harga-input shadow-sm border border-gray-300 rounded w-full py-1 px-2 text-gray-700 text-sm leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" min="0" step="100" required>
+                                    </td>
+                                    <td class="py-2 px-2">
+                                        <input type="number" name="harga_satuan[]" class="harga-satuan-input shadow-sm border border-gray-300 rounded w-full py-1 px-2 text-gray-700 text-sm leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" min="0" step="0.01" readonly>
                                     </td>
                                     <td class="py-2 px-2">
                                         <select name="lokasi[]" class="lokasi-select shadow-sm border border-gray-300 rounded w-full py-1 px-2 text-gray-700 text-sm leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                                             <option value="kitchen">Kitchen</option>
                                             <option value="bar">Bar</option>
                                         </select>
-                                    </td>
-                                    <td class="py-2 px-2">
-                                        <span class="total-display">Rp 0</span>
                                     </td>
                                     <td class="py-2 px-2">
                                         <button type="button" class="text-red-500 hover:text-red-700 remove-item-btn" onclick="removeItem(this)">
@@ -1091,9 +1098,9 @@ $total_pages = ceil($total_records / $records_per_page);
         template.querySelector('.barang-select').selectedIndex = 0;
         template.querySelector('.qty-input').value = 1;
         template.querySelector('.periode-select').selectedIndex = 0;
-        template.querySelector('.harga-input').value = '';
+        template.querySelector('.total-harga-input').value = '';
+        template.querySelector('.harga-satuan-input').value = '';
         template.querySelector('.lokasi-select').selectedIndex = 0;
-        template.querySelector('.total-display').textContent = 'Rp 0';
         
         // Remove any existing hidden fields for new items
         const existingFields = template.querySelectorAll('.new-item-field');
@@ -1166,8 +1173,8 @@ $total_pages = ceil($total_records / $records_per_page);
                             }
                             
                             if (selectedOption.dataset.harga) {
-                                row.querySelector('.harga-input').value = selectedOption.dataset.harga;
-                                calculateTotal(row);
+                                row.querySelector('.total-harga-input').value = selectedOption.dataset.harga;
+                                calculateUnitPrice(row);
                             }
                         });
                     }
@@ -1198,11 +1205,7 @@ $total_pages = ceil($total_records / $records_per_page);
         }
     }
     
-    // Display total directly from harga_satuan
-    function calculateTotal(row) {
-        const harga = parseFloat(row.querySelector('.harga-input').value) || 0;
-        row.querySelector('.total-display').textContent = formatRupiah(harga);
-    }
+    // This function was replaced by calculateUnitPrice
     
     // Setup events for item row
     function setupItemEvents(row) {
@@ -1324,6 +1327,7 @@ $total_pages = ceil($total_records / $records_per_page);
                                                 <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Satuan</th>
                                                 <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Periode</th>
                                                 <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Harga Total</th>
+                                                <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Harga Satuan</th>
                                                 <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Lokasi</th>
                                                 <th class="py-2 px-2 text-left text-xs font-medium text-gray-500 uppercase">Nilai</th>
                                             </tr>
@@ -1340,6 +1344,7 @@ $total_pages = ceil($total_records / $records_per_page);
                                     <td class="py-2 px-2 text-sm">${item.satuan}</td>
                                     <td class="py-2 px-2 text-sm">Periode ${item.periode}</td>
                                     <td class="py-2 px-2 text-sm">${item.harga_satuan_formatted}</td>
+                                    <td class="py-2 px-2 text-sm">${item.harga_satuan}</td>
                                     <td class="py-2 px-2 text-sm">${item.lokasi}</td>
                                     <td class="py-2 px-2 text-sm font-medium">${item.total_formatted}</td>
                                 </tr>`;
@@ -1350,7 +1355,7 @@ $total_pages = ceil($total_records / $records_per_page);
                                 </tbody>
                                 <tfoot class="bg-gray-50">
                                     <tr>
-                                        <td colspan="7" class="py-2 px-2 text-sm font-medium text-right">Total:</td>
+                                        <td colspan="8" class="py-2 px-2 text-sm font-medium text-right">Total:</td>
                                         <td class="py-2 px-2 text-sm font-bold">${pesanan.total_nilai_formatted}</td>
                                     </tr>
                                 </tfoot>
@@ -1586,6 +1591,68 @@ $total_pages = ceil($total_records / $records_per_page);
                             </div>
                         </div>
                     </div>`;
+        });
+    }
+
+    // Calculate unit price based on total price and quantity
+    function calculateUnitPrice(row) {
+        const totalHarga = parseFloat(row.querySelector('.total-harga-input').value) || 0;
+        const qty = parseFloat(row.querySelector('.qty-input').value) || 1;
+        
+        // Calculate unit price (harga satuan)
+        let hargaSatuan = 0;
+        if (qty > 0) {
+            hargaSatuan = totalHarga / qty;
+        }
+        
+        // Update the harga satuan field
+        row.querySelector('.harga-satuan-input').value = hargaSatuan.toFixed(2);
+    }
+    
+    // Setup events for item row
+    function setupItemEvents(row) {
+        const totalHargaInput = row.querySelector('.total-harga-input');
+        const qtyInput = row.querySelector('.qty-input');
+        const barangSelect = row.querySelector('.barang-select');
+        
+        // Update unit price when total price or quantity changes
+        totalHargaInput.addEventListener('input', function() {
+            calculateUnitPrice(row);
+        });
+        
+        qtyInput.addEventListener('input', function() {
+            calculateUnitPrice(row);
+        });
+        
+        barangSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            
+            // Remove any existing hidden fields for new items
+            const existingFields = row.querySelectorAll('.new-item-field');
+            existingFields.forEach(field => field.remove());
+            
+            if (selectedOption.value === "0" && selectedOption.dataset.newItem === "true") {
+                // This is a new item, add hidden fields for name and satuan
+                const nameField = document.createElement('input');
+                nameField.type = 'hidden';
+                nameField.name = 'new_item_name[]';
+                nameField.value = selectedOption.dataset.name;
+                nameField.className = 'new-item-field';
+                row.appendChild(nameField);
+                
+                const satuanField = document.createElement('input');
+                satuanField.type = 'hidden';
+                satuanField.name = 'new_item_satuan[]';
+                satuanField.value = selectedOption.dataset.satuan;
+                satuanField.className = 'new-item-field';
+                row.appendChild(satuanField);
+            }
+            
+            // If the item has a default price, set it as the total price
+            if (selectedOption.dataset.harga) {
+                totalHargaInput.value = selectedOption.dataset.harga;
+                calculateUnitPrice(row);
+            }
         });
     }
 </script>

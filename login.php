@@ -1,5 +1,8 @@
 <?php
 session_start();
+// Set timezone to Western Indonesia Time (WIB)
+date_default_timezone_set('Asia/Jakarta');
+
 require_once 'config/database.php';
 require_once 'config/functions.php';
 

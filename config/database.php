@@ -12,6 +12,13 @@ if (!$conn) {
     die("Connection failed: " . mysqli_connect_error());
 }
 
+// Set timezone to Western Indonesia Time (WIB)
+date_default_timezone_set('Asia/Jakarta');
+
+// Set the MySQL session timezone to match PHP timezone
+$timezone = date('P'); // Gets timezone offset in format +07:00
+mysqli_query($conn, "SET time_zone='$timezone'");
+
 // Set charset to utf8mb4
 mysqli_set_charset($conn, "utf8mb4");
 
